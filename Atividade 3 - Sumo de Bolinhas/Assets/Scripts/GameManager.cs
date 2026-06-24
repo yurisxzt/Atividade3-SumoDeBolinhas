@@ -73,6 +73,7 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         Debug.Log($"GameManager started. State={State}");
+        EnsureSingleAudioListener();
     }
 
     private void OnEnable()
@@ -81,6 +82,7 @@ public class GameManager : MonoBehaviour
         // set initial state based on currently active scene
         var active = SceneManager.GetActiveScene();
         MapSceneToState(active.name);
+        EnsureSingleAudioListener();
     }
 
     private void OnDisable()
@@ -91,6 +93,42 @@ public class GameManager : MonoBehaviour
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         MapSceneToState(scene.name);
+        EnsureSingleAudioListener();
+    }
+
+    private void EnsureSingleAudioListener()
+    {
+        AudioListener[] listeners = FindObjectsOfType<AudioListener>(true);
+        if (listeners == null || listeners.Length == 0)
+        {
+            var listenerObject = new GameObject("AudioListener");
+            listenerObject.AddComponent<AudioListener>();
+            return;
+        }
+
+        var activeScene = SceneManager.GetActiveScene();
+        AudioListener preferred = null;
+
+        for (int i = 0; i < listeners.Length; i++)
+        {
+            var listener = listeners[i];
+            if (listener == null) continue;
+            if (listener.gameObject.scene == activeScene)
+            {
+                preferred = listener;
+                break;
+            }
+        }
+
+        if (preferred == null)
+            preferred = listeners[0];
+
+        for (int i = 0; i < listeners.Length; i++)
+        {
+            var listener = listeners[i];
+            if (listener == null) continue;
+            listener.enabled = listener == preferred;
+        }
     }
 
     private void MapSceneToState(string sceneName)
@@ -177,6 +215,7 @@ public class GameManager : MonoBehaviour
 
         // pequena espera para garantir que objetos Awake/OnEnable já rodaram
         yield return null;
+        EnsureSingleAudioListener();
 
         // após carregar, alocar entradas para jogador(s)
         try
@@ -238,6 +277,8 @@ public class GameManager : MonoBehaviour
         var loadedScene = SceneManager.GetSceneByName(targetSceneName);
         if (loadedScene.IsValid())
             SceneManager.SetActiveScene(loadedScene);
+
+        EnsureSingleAudioListener();
 
         // unload the boot scene
         var unloadOp = SceneManager.UnloadSceneAsync(currentScene);
