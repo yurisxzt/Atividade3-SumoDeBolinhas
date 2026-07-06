@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Giant
   m_EditorClassIdentifier: Assembly-CSharp::BolinhaData
   ballName: Giant
-  icon: {fileID: 0}
-  player1Material: {fileID: 0}
-  player2Material: {fileID: 0}
-  moveSpeed: 12
-  basePushForce: 800
+  icon: {fileID: 21300000, guid: 8c10b9e0e2236d948bc571b02ab81783, type: 3}
+  player1Material: {fileID: 2100000, guid: a376b09e812097249987e9145d22424b, type: 2}
+  player2Material: {fileID: 2100000, guid: 0aad9ebdccf4e3c468f09799c4753856, type: 2}
+  moveSpeed: 9
+  basePushForce: 950
   maxPushForce: 1800
-  initialSize: 1
-  initialMass: 1
+  initialSize: 1.5
+  initialMass: 1.7

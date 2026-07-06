@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Speedster
   m_EditorClassIdentifier: Assembly-CSharp::BolinhaData
   ballName: Speedster
-  icon: {fileID: 0}
-  player1Material: {fileID: 0}
-  player2Material: {fileID: 0}
-  moveSpeed: 12
-  basePushForce: 800
+  icon: {fileID: 21300000, guid: fa8d3031fb9892741896cdf45e5399cd, type: 3}
+  player1Material: {fileID: 2100000, guid: 61cbdcd8271fb884391f5d0b78e165cc, type: 2}
+  player2Material: {fileID: 2100000, guid: 02691616b377b8f43b14d82e9b01647b, type: 2}
+  moveSpeed: 16
+  basePushForce: 650
   maxPushForce: 1800
-  initialSize: 1
-  initialMass: 1
+  initialSize: 0.9
+  initialMass: 0.8
