@@ -21,6 +21,8 @@ public class TwoBallController : MonoBehaviour
 
     private Rigidbody rb;
 
+    private PlayerStats stats;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -33,6 +35,8 @@ public class TwoBallController : MonoBehaviour
         rb.linearDamping = 0.8f;
         rb.angularDamping = 0.2f;
         rb.constraints = RigidbodyConstraints.FreezeRotation;
+
+        stats = GetComponent<PlayerStats>();
     }
 
     private void FixedUpdate()
@@ -42,7 +46,14 @@ public class TwoBallController : MonoBehaviour
 
         if (moveDirection.sqrMagnitude > 0.01f)
         {
-            rb.AddForce(moveDirection.normalized * moveSpeed, ForceMode.Acceleration);
+            float speed = moveSpeed;
+
+            if(stats != null)
+            {
+                speed *= stats.SpeedMultiplier;
+            }
+
+            rb.AddForce(moveDirection.normalized * speed, ForceMode.Acceleration);
         }
     }
 
@@ -135,7 +146,22 @@ public class TwoBallController : MonoBehaviour
         distance = Mathf.Max(distance, 0.2f);
 
         float forceMagnitude = Mathf.Clamp(basePushForce / distance, 300f, maxPushForce);
-        enemy.rb?.AddForce(direction * forceMagnitude, ForceMode.Impulse);
+
+        if(stats != null)
+        {
+            forceMagnitude *= stats.ForceMultiplier;
+        }
+        float resistance = 1f;
+
+        PlayerStats enemyStats =
+        enemy.GetComponent<PlayerStats>();
+
+        if(enemyStats != null)
+        {
+            resistance = enemyStats.ResistanceMultiplier;
+        }
+
+        enemy.rb?.AddForce(direction * (forceMagnitude / resistance), ForceMode.Impulse);
     }
     // No cenário devem ter moedas, que quando coletadas, aumentam a pontuação do jogador e também aumentam a força de empurrão da bolinha. A cada 5 moedas coletadas, a bolinha do jogador aumenta de tamanho, ficando mais lenta, mas mais resistente a ser empurrada para longe.
     public void CollectCoin(int value)
@@ -147,5 +173,11 @@ public class TwoBallController : MonoBehaviour
             transform.localScale += Vector3.one * 0.1f;
             basePushForce += 50f;
         }
+    }
+    public void Configure(float speed, float push, float maxPush)
+    {
+        moveSpeed = speed;
+        basePushForce = push;
+        maxPushForce = maxPush;
     }
 }

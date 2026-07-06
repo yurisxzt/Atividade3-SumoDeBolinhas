@@ -1,28 +1,48 @@
 using UnityEngine;
 
-/// <summary>
-/// Simple helper to spawn a grid of coins at scene start for testing.
-/// Assign a Coin prefab and configure rows/cols and spacing.
-/// </summary>
 public class CoinSpawner : MonoBehaviour
 {
-    public GameObject coinPrefab;
-    public int rows = 3;
-    public int cols = 5;
-    public Vector3 start = new Vector3(-4, 1, -2);
-    public Vector3 spacing = new Vector3(1.5f, 0, 1.5f);
+    [SerializeField]
+    private GameObject coinPrefab;
 
-    private void Start()
+    [SerializeField]
+    private float spawnInterval = 3f;
+
+    [SerializeField]
+    private float arenaRadius = 8f;
+
+    [SerializeField]
+    private int maxCoins = 10;
+
+    private float timer;
+
+    private void Update()
     {
-        if (coinPrefab == null) return;
-        for (int r = 0; r < rows; r++)
+        timer += Time.deltaTime;
+
+        if(timer >= spawnInterval)
         {
-            for (int c = 0; c < cols; c++)
-            {
-                Vector3 pos = start + new Vector3(spacing.x * c, spacing.y * r, spacing.z * c);
-                Instantiate(coinPrefab, pos, Quaternion.identity);
-            }
+            timer = 0f;
+            SpawnCoin();
         }
     }
-}
 
+    void SpawnCoin()
+    {
+        if(FindObjectsOfType<Coin>().Length >= maxCoins)
+            return;
+
+        Vector3 pos =
+            new Vector3(
+                Random.Range(-arenaRadius, arenaRadius),
+                0.5f,
+                Random.Range(-arenaRadius, arenaRadius)
+            );
+
+        Instantiate(
+            coinPrefab,
+            pos,
+            Quaternion.identity
+        );
+    }
+}

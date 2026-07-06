@@ -193,6 +193,3 @@ public class GameManagerCore : MonoBehaviour
     }
 #endif
 }
-
-
-

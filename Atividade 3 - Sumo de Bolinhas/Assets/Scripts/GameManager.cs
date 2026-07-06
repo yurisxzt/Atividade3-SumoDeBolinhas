@@ -397,13 +397,39 @@ public class GameManager : MonoBehaviour
         Debug.Log("GameManager: Input System não habilitado — pulando alocação de inputs.");
 #endif
     }
+    public void RegisterWinner(string playerName, string ballName)
+    {
+        MatchData.WinnerName = playerName;
+        MatchData.WinnerBall = ballName;
+        ForceSceneChange("VictoryScene");
+    }
+    public void PlayerLost(TwoBallController loser)
+{
+    TwoBallController[] players =
+        FindObjectsByType<TwoBallController>(
+            FindObjectsSortMode.None);
+
+    foreach(var player in players)
+    {
+        if(player == loser)
+            continue;
+
+        BolinhaController bolinha =
+            player.GetComponent<BolinhaController>();
+
+        string ballName = "Desconhecida";
+
+        if(bolinha != null && bolinha.Data != null)
+        {
+            ballName = bolinha.Data.ballName;
+        }
+
+        RegisterWinner(
+            player.name,
+            ballName
+        );
+
+        break;
+    }
 }
-
-
-
-
-
-
-
-
-
+}

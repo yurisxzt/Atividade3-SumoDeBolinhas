@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f798e0cb5e997b745879d0c4c102fcfa, type: 3}
+  m_Name: Speedster
+  m_EditorClassIdentifier: Assembly-CSharp::BolinhaData
+  ballName: Speedster
+  icon: {fileID: 0}
+  player1Material: {fileID: 0}
+  player2Material: {fileID: 0}
+  moveSpeed: 12
+  basePushForce: 800
+  maxPushForce: 1800
+  initialSize: 1
+  initialMass: 1

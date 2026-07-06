@@ -15,11 +15,14 @@ EditorBuildSettings:
     path: Assets/Scenes/MenuPrincipal.unity
     guid: cd9e2e002ab0e404b95f8d14bb0eb77f
   - enabled: 1
-    path: "Assets/Scenes/Sele\xE7\xE3o de Bolinhas.unity"
+    path: "Assets/Scenes/Sele\xE7\xE3oBolinhas.unity"
     guid: ed1ee3e72fce7b940bf755ed973b669e
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/VictoryScene.unity
+    guid: 8b0aad23dd09879439c3afba3193373d
   - enabled: 1
     path: Assets/Scenes/GUI.unity
     guid: ad47eeba17c8d1d48919497c22f46152
