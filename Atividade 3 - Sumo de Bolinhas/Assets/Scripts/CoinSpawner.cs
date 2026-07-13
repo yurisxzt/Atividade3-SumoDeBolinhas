@@ -9,10 +9,10 @@ public class CoinSpawner : MonoBehaviour
     private float spawnInterval = 3f;
 
     [SerializeField]
-    private float arenaRadius = 8f;
+    private int maxCoins = 10;
 
     [SerializeField]
-    private int maxCoins = 10;
+    private float arenaRadius = 8f;
 
     private float timer;
 
@@ -23,26 +23,29 @@ public class CoinSpawner : MonoBehaviour
         if(timer >= spawnInterval)
         {
             timer = 0f;
+
             SpawnCoin();
         }
     }
 
     void SpawnCoin()
     {
-        if(FindObjectsOfType<Coin>().Length >= maxCoins)
+        Coin[] coins =
+            FindObjectsByType<Coin>(
+                FindObjectsSortMode.None);
+
+        if(coins.Length >= maxCoins)
             return;
 
-        Vector3 pos =
+        Vector3 position =
             new Vector3(
                 Random.Range(-arenaRadius, arenaRadius),
                 0.5f,
-                Random.Range(-arenaRadius, arenaRadius)
-            );
+                Random.Range(-arenaRadius, arenaRadius));
 
         Instantiate(
             coinPrefab,
-            pos,
-            Quaternion.identity
-        );
+            position,
+            Quaternion.identity);
     }
 }

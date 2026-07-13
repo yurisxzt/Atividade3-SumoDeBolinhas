@@ -30,11 +30,18 @@ public class PlayerSpawner : MonoBehaviour
         Vector3 pos)
     {
         GameObject obj =
-            Instantiate(prefab,pos,Quaternion.identity);
+            Instantiate(
+                prefab,
+                pos,
+                Quaternion.identity);
 
         BolinhaController ball =
             obj.GetComponent<BolinhaController>();
 
         ball.SetData(data);
+
+        obj.name = p1
+            ? "Jogador 1"
+            : "Jogador 2";
     }
 }

@@ -22,7 +22,6 @@ public class Coin : MonoBehaviour
     {
         transform.Rotate(
             Vector3.up,
-            180f * Time.deltaTime
-        );
+            180f * Time.deltaTime);
     }
 }

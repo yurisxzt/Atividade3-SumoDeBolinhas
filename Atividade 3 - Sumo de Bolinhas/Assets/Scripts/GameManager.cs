@@ -404,32 +404,35 @@ public class GameManager : MonoBehaviour
         ForceSceneChange("VictoryScene");
     }
     public void PlayerLost(TwoBallController loser)
-{
-    TwoBallController[] players =
-        FindObjectsByType<TwoBallController>(
-            FindObjectsSortMode.None);
-
-    foreach(var player in players)
     {
-        if(player == loser)
-            continue;
+        TwoBallController[] players =
+            FindObjectsByType<TwoBallController>(
+                FindObjectsSortMode.None);
 
-        BolinhaController bolinha =
-            player.GetComponent<BolinhaController>();
-
-        string ballName = "Desconhecida";
-
-        if(bolinha != null && bolinha.Data != null)
+        foreach(var player in players)
         {
-            ballName = bolinha.Data.ballName;
+            if(player == loser)
+                continue;
+
+            BolinhaController ball =
+                player.GetComponent<BolinhaController>();
+
+            string ballName = "Desconhecida";
+
+            if(ball != null && ball.Data != null)
+            {
+                ballName = ball.Data.ballName;
+            }
+
+            MatchData.WinnerName =
+                player.name;
+
+            MatchData.WinnerBall =
+                ballName;
+
+            ForceSceneChange("VictoryScene");
+
+            return;
         }
-
-        RegisterWinner(
-            player.name,
-            ballName
-        );
-
-        break;
     }
-}
 }

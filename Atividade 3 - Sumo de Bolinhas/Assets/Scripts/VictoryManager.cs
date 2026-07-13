@@ -24,6 +24,6 @@ public class VictoryManager : MonoBehaviour
     {
         GameManager.Instance
             .ForceSceneChange(
-                "CharacterSelection");
+                "SeleçãoBolinhas");
     }
 }
