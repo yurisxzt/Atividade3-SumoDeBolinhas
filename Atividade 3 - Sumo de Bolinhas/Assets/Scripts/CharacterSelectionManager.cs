@@ -104,7 +104,8 @@ public class CharacterSelectionManager : MonoBehaviour
         statsText.text =
             $"Velocidade: {data.moveSpeed}\n" +
             $"Força: {data.basePushForce}\n" +
-            $"Tamanho: {data.initialSize}";
+            $"Tamanho: {data.initialSize}\n" +
+            $"Jogador 1 - {data.player1Material.color}\n" + $"Jogador 2 - {data.player2Material.color}";
     }
 
     public void StartMatch()
