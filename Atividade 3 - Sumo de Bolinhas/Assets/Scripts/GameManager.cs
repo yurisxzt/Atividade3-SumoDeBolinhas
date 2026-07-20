@@ -94,6 +94,29 @@ public class GameManager : MonoBehaviour
     {
         MapSceneToState(scene.name);
         EnsureSingleAudioListener();
+        ApplyGameplayCamera(scene.name);
+    }
+
+    private void ApplyGameplayCamera(string sceneName)
+    {
+        if (string.IsNullOrWhiteSpace(sceneName))
+            return;
+
+        bool isGameplayScene =
+            sceneName.ToLowerInvariant().Contains("sample") ||
+            sceneName.ToLowerInvariant().Contains("game");
+
+        if (!isGameplayScene)
+            return;
+
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
+            return;
+
+        mainCamera.transform.position = new Vector3(0f, 16.5f, -20.5f);
+        mainCamera.transform.rotation = Quaternion.Euler(50f, 0f, 0f);
+        mainCamera.fieldOfView = 58f;
+        mainCamera.orthographic = false;
     }
 
     private void EnsureSingleAudioListener()

@@ -8,6 +8,10 @@ public class PlayerSpawner : MonoBehaviour
     [SerializeField]
     private GameObject player2Prefab;
 
+    public PlayerStats Player1Stats { get; private set; }
+
+    public PlayerStats Player2Stats { get; private set; }
+
     private void Start()
     {
         SpawnPlayer(
@@ -21,6 +25,8 @@ public class PlayerSpawner : MonoBehaviour
             MatchData.Player2Ball,
             false,
             new Vector3(3,0,0));
+
+        gameObject.AddComponent<CoinScoreboard>();
     }
 
     void SpawnPlayer(
@@ -39,6 +45,18 @@ public class PlayerSpawner : MonoBehaviour
             obj.GetComponent<BolinhaController>();
 
         ball.SetData(data);
+
+        PlayerStats playerStats =
+            obj.GetComponent<PlayerStats>();
+
+        if (p1)
+        {
+            Player1Stats = playerStats;
+        }
+        else
+        {
+            Player2Stats = playerStats;
+        }
 
         obj.name = p1
             ? "Jogador 1"

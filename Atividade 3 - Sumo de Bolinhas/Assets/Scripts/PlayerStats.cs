@@ -5,6 +5,10 @@ public class PlayerStats : MonoBehaviour
     [Header("Coins")]
     public int coins;
 
+    public int Coins => coins;
+
+    public event System.Action<int> OnCoinsChanged;
+
     [Header("Scaling")]
     public float sizePerLevel = 0.15f;
     public int coinsPerLevel = 5;
@@ -33,6 +37,8 @@ public class PlayerStats : MonoBehaviour
     public void AddCoins(int amount)
     {
         coins += amount;
+
+        OnCoinsChanged?.Invoke(coins);
 
         int level = coins / coinsPerLevel;
 
