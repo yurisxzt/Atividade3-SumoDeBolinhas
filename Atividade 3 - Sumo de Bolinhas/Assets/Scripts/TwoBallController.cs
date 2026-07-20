@@ -31,10 +31,10 @@ public class TwoBallController : MonoBehaviour
             rb = gameObject.AddComponent<Rigidbody>();
         }
 
-        rb.useGravity = false;
+        //rb.useGravity = false;
         rb.linearDamping = 0.8f;
         rb.angularDamping = 0.2f;
-        rb.constraints = RigidbodyConstraints.FreezeRotation;
+       // rb.constraints = RigidbodyConstraints.FreezeRotation;
 
         stats = GetComponent<PlayerStats>();
     }

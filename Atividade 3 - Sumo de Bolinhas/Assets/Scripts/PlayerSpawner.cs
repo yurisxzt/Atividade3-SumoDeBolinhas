@@ -18,13 +18,13 @@ public class PlayerSpawner : MonoBehaviour
             player1Prefab,
             MatchData.Player1Ball,
             true,
-            new Vector3(-3,0,0));
+            new Vector3(-3,1,0));
 
         SpawnPlayer(
             player2Prefab,
             MatchData.Player2Ball,
             false,
-            new Vector3(3,0,0));
+            new Vector3(3,1,0));
 
         gameObject.AddComponent<CoinScoreboard>();
     }
