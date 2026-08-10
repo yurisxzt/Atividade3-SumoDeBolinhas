@@ -3,22 +3,23 @@ using UnityEngine;
 public class PlayerStats : MonoBehaviour
 {
     [Header("Coins")]
-    public int coins;
+    [SerializeField] private int coins = 0;
 
     public int Coins => coins;
 
     public event System.Action<int> OnCoinsChanged;
 
     [Header("Scaling")]
-    public float sizePerLevel = 0.15f;
-    public int coinsPerLevel = 5;
+    [SerializeField] private float sizePerLevel = 0.15f;
+    [SerializeField] private int coinsPerLevel = 5;
 
     [Header("Bonuses")]
-    public float forceBonusPerCoin = 25f;
-    public float resistanceBonusPerCoin = 0.05f;
-    public float speedPenaltyPerCoin = 0.1f;
+    [SerializeField] private float forceBonusPerCoin = 25f;
+    [SerializeField] private float resistanceBonusPerCoin = 0.05f;
+    [SerializeField] private float speedPenaltyPerCoin = 0.1f;
 
     private Rigidbody rb;
+    private Vector3 originalScale;
 
     public float ForceMultiplier =>
         1f + (coins * forceBonusPerCoin / 100f);
@@ -32,27 +33,45 @@ public class PlayerStats : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        originalScale = transform.localScale;
     }
 
     public void AddCoins(int amount)
     {
+        if (amount <= 0)
+            return;
+
         coins += amount;
 
+        // Atualiza a interface através do Observer
         OnCoinsChanged?.Invoke(coins);
 
+        // A cada 5 moedas, aumenta o tamanho
         int level = coins / coinsPerLevel;
 
         transform.localScale =
-            Vector3.one * (1f + level * sizePerLevel);
+            originalScale * (1f + level * sizePerLevel);
 
+        // Aumenta a massa conforme as moedas
         UpdateMass();
     }
 
-    void UpdateMass()
+    private void UpdateMass()
     {
         if (rb != null)
         {
             rb.mass = 1f + coins * 0.2f;
         }
+    }
+
+    public void ResetStats()
+    {
+        coins = 0;
+
+        transform.localScale = originalScale;
+
+        UpdateMass();
+
+        OnCoinsChanged?.Invoke(coins);
     }
 }

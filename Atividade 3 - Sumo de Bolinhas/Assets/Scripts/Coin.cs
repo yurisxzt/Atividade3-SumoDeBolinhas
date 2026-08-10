@@ -7,11 +7,18 @@ public class Coin : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        PlayerStats stats =
-            other.GetComponent<PlayerStats>();
+        Debug.Log("Objeto entrou na moeda: " + other.name);
 
-        if(stats == null)
+        PlayerStats stats =
+            other.GetComponentInParent<PlayerStats>();
+
+        if (stats == null)
+        {
+            Debug.Log("Não encontrou PlayerStats em: " + other.name);
             return;
+        }
+
+        Debug.Log("Moeda coletada por: " + other.name);
 
         stats.AddCoins(value);
 
