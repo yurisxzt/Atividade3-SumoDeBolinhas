@@ -17,7 +17,7 @@ MonoBehaviour:
   player1Material: {fileID: 2100000, guid: e21ef1cdf78f1f74a948d10dea34d3f6, type: 2}
   player2Material: {fileID: 2100000, guid: 514c553e3660d244cad326c0b655d1e5, type: 2}
   moveSpeed: 8
-  basePushForce: 900
-  maxPushForce: 1800
+  basePushForce: 1900
+  maxPushForce: 10
   initialSize: 1.3
   initialMass: 2.2

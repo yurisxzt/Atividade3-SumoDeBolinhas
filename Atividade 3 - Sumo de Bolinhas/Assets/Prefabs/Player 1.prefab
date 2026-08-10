@@ -158,8 +158,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TwoBallController
   moveSpeed: 12
   controlScheme: 0
-  basePushForce: 800
-  maxPushForce: 1800
+  basePushForce: 0
+  maxPushForce: 0
   actionKey: 32
 --- !u!114 &897358144076769496
 MonoBehaviour:

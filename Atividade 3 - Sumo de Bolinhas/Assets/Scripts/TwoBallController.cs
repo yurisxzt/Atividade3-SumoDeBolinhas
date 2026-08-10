@@ -15,8 +15,9 @@ public class TwoBallController : MonoBehaviour
     [SerializeField] private ControlScheme controlScheme = ControlScheme.Wasd;
 
     [Header("Action")]
-    [SerializeField] private float basePushForce = 800f;
-    [SerializeField] private float maxPushForce = 1800f;
+    [Tooltip("Base push force applied to other balls (kept low for a lighter push).")]
+    [SerializeField] private float basePushForce = 200f;
+    [SerializeField] private float maxPushForce = 600f;
     [SerializeField] private KeyCode actionKey = KeyCode.Space;
 
     private Rigidbody rb;
@@ -145,7 +146,7 @@ public class TwoBallController : MonoBehaviour
         float distance = Vector3.Distance(transform.position, enemy.transform.position);
         distance = Mathf.Max(distance, 0.2f);
 
-        float forceMagnitude = Mathf.Clamp(basePushForce / distance, 300f, maxPushForce);
+        float forceMagnitude = Mathf.Clamp(basePushForce / (distance * 1.2f), 80f, maxPushForce);
 
         if(stats != null)
         {
@@ -171,7 +172,7 @@ public class TwoBallController : MonoBehaviour
         {
             // Aumenta o tamanho da bolinha e ajusta a força de empurrão
             transform.localScale += Vector3.one * 0.1f;
-            basePushForce += 50f;
+            basePushForce += 10f;
         }
     }
     public void Configure(float speed, float push, float maxPush)
