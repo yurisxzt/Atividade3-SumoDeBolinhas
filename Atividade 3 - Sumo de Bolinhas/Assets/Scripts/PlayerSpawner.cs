@@ -9,8 +9,10 @@ public class PlayerSpawner : MonoBehaviour
     private GameObject player2Prefab;
 
     public PlayerStats Player1Stats { get; private set; }
-
     public PlayerStats Player2Stats { get; private set; }
+
+    public TwoBallController Player1Controller { get; private set; }
+    public TwoBallController Player2Controller { get; private set; }
 
     private void Start()
     {
@@ -28,7 +30,17 @@ public class PlayerSpawner : MonoBehaviour
             new Vector3(3, 1, 0)
         );
 
-        gameObject.AddComponent<CoinScoreboard>();
+        // Cria o placar de moedas
+        if (GetComponent<CoinScoreboard>() == null)
+        {
+            gameObject.AddComponent<CoinScoreboard>();
+        }
+
+        // Cria a interface das barras de empurrão
+        if (GetComponent<PushCooldownUI>() == null)
+        {
+            gameObject.AddComponent<PushCooldownUI>();
+        }
     }
 
     private void SpawnPlayer(
@@ -37,6 +49,18 @@ public class PlayerSpawner : MonoBehaviour
         bool p1,
         Vector3 pos)
     {
+        if (prefab == null)
+        {
+            Debug.LogError(
+                "Prefab do Jogador " +
+                (p1 ? "1" : "2") +
+                " não foi configurado!"
+            );
+
+            return;
+        }
+
+        // Cria a bolinha
         GameObject obj = Instantiate(
             prefab,
             pos,
@@ -54,45 +78,64 @@ public class PlayerSpawner : MonoBehaviour
         else
         {
             Debug.LogError(
-                "O prefab " + prefab.name +
+                "O prefab " +
+                prefab.name +
                 " não possui BolinhaController!"
             );
         }
 
-        // Procura o PlayerStats
+        // Pega o controlador de movimento/empurrão
+        TwoBallController controller =
+            obj.GetComponent<TwoBallController>();
+
+        if (controller == null)
+        {
+            Debug.LogError(
+                "O prefab " +
+                prefab.name +
+                " não possui TwoBallController!"
+            );
+
+            controller =
+                obj.AddComponent<TwoBallController>();
+        }
+
+        // Pega os PlayerStats
         PlayerStats playerStats =
             obj.GetComponent<PlayerStats>();
 
-        // Se não existir, adiciona automaticamente
+        // Se não tiver, adiciona automaticamente
         if (playerStats == null)
         {
-            Debug.LogWarning(
-                "PlayerStats não encontrado em " +
-                obj.name +
-                ". Adicionando automaticamente."
-            );
-
             playerStats =
                 obj.AddComponent<PlayerStats>();
+
+            Debug.Log(
+                "PlayerStats adicionado automaticamente ao " +
+                (p1 ? "Jogador 1" : "Jogador 2")
+            );
         }
 
-        // Guarda os stats do jogador correto
+        // Guarda as referências
         if (p1)
         {
             Player1Stats = playerStats;
+            Player1Controller = controller;
         }
         else
         {
             Player2Stats = playerStats;
+            Player2Controller = controller;
         }
 
+        // Nomeia a bolinha
         obj.name = p1
             ? "Jogador 1"
             : "Jogador 2";
 
         Debug.Log(
             obj.name +
-            " criado com PlayerStats corretamente."
+            " criado com sucesso."
         );
     }
 }

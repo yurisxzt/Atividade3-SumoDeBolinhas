@@ -7,6 +7,7 @@ public class PlayerStats : MonoBehaviour
 
     public int Coins => coins;
 
+    // Observer: avisa a interface quando a quantidade de moedas muda
     public event System.Action<int> OnCoinsChanged;
 
     [Header("Scaling")]
@@ -19,20 +20,31 @@ public class PlayerStats : MonoBehaviour
     [SerializeField] private float speedPenaltyPerCoin = 0.1f;
 
     private Rigidbody rb;
+
+    // Guarda o tamanho original definido pelo BolinhaData
     private Vector3 originalScale;
 
+    // Aumenta a força de empurrão conforme coleta moedas
     public float ForceMultiplier =>
         1f + (coins * forceBonusPerCoin / 100f);
 
+    // Aumenta a resistência conforme coleta moedas
     public float ResistanceMultiplier =>
         1f + (coins * resistanceBonusPerCoin);
 
+    // Diminui a velocidade conforme coleta moedas
+    // Nunca fica abaixo de 40% da velocidade original
     public float SpeedMultiplier =>
-        Mathf.Max(0.4f, 1f - (coins * speedPenaltyPerCoin / 10f));
+        Mathf.Max(
+            0.4f,
+            1f - (coins * speedPenaltyPerCoin / 10f)
+        );
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+
+        // Guarda o tamanho original da bolinha
         originalScale = transform.localScale;
     }
 
@@ -43,16 +55,17 @@ public class PlayerStats : MonoBehaviour
 
         coins += amount;
 
-        // Atualiza a interface através do Observer
+        // Avisa o CoinScoreboard
         OnCoinsChanged?.Invoke(coins);
 
         // A cada 5 moedas, aumenta o tamanho
         int level = coins / coinsPerLevel;
 
         transform.localScale =
-            originalScale * (1f + level * sizePerLevel);
+            originalScale *
+            (1f + level * sizePerLevel);
 
-        // Aumenta a massa conforme as moedas
+        // Aumenta a massa
         UpdateMass();
     }
 
@@ -60,7 +73,8 @@ public class PlayerStats : MonoBehaviour
     {
         if (rb != null)
         {
-            rb.mass = 1f + coins * 0.2f;
+            rb.mass =
+                1f + coins * 0.2f;
         }
     }
 
@@ -68,7 +82,8 @@ public class PlayerStats : MonoBehaviour
     {
         coins = 0;
 
-        transform.localScale = originalScale;
+        transform.localScale =
+            originalScale;
 
         UpdateMass();
 
