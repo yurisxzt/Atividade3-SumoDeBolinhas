@@ -7,7 +7,6 @@ public class PlayerStats : MonoBehaviour
 
     public int Coins => coins;
 
-    // Observer: avisa a interface quando a quantidade de moedas muda
     public event System.Action<int> OnCoinsChanged;
 
     [Header("Scaling")]
@@ -19,32 +18,34 @@ public class PlayerStats : MonoBehaviour
     [SerializeField] private float resistanceBonusPerCoin = 0.05f;
     [SerializeField] private float speedPenaltyPerCoin = 0.1f;
 
-    private Rigidbody rb;
+    [Header("Coin Pickup Boost")]
+    [SerializeField] private float coinSpeedBoost = 0.15f;
+    [SerializeField] private float coinForceBoost = 0.10f;
 
-    // Guarda o tamanho original definido pelo BolinhaData
+    private Rigidbody rb;
     private Vector3 originalScale;
 
-    // Aumenta a força de empurrão conforme coleta moedas
-    public float ForceMultiplier =>
-        1f + (coins * forceBonusPerCoin / 100f);
+    // Bônus acumulado das moedas
+    private float temporarySpeedBoost = 0f;
+    private float temporaryForceBoost = 0f;
 
-    // Aumenta a resistência conforme coleta moedas
+    public float ForceMultiplier =>
+        (1f + (coins * forceBonusPerCoin / 100f))
+        * (1f + temporaryForceBoost);
+
     public float ResistanceMultiplier =>
         1f + (coins * resistanceBonusPerCoin);
 
-    // Diminui a velocidade conforme coleta moedas
-    // Nunca fica abaixo de 40% da velocidade original
     public float SpeedMultiplier =>
         Mathf.Max(
             0.4f,
-            1f - (coins * speedPenaltyPerCoin / 10f)
+            (1f - (coins * speedPenaltyPerCoin / 10f))
+            + temporarySpeedBoost
         );
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
-
-        // Guarda o tamanho original da bolinha
         originalScale = transform.localScale;
     }
 
@@ -55,17 +56,20 @@ public class PlayerStats : MonoBehaviour
 
         coins += amount;
 
-        // Avisa o CoinScoreboard
+        // Pequeno bônus instantâneo/acumulativo
+        temporarySpeedBoost += coinSpeedBoost;
+        temporaryForceBoost += coinForceBoost;
+
+        // Atualiza o placar
         OnCoinsChanged?.Invoke(coins);
 
-        // A cada 5 moedas, aumenta o tamanho
+        // A cada 5 moedas aumenta o tamanho
         int level = coins / coinsPerLevel;
 
         transform.localScale =
             originalScale *
             (1f + level * sizePerLevel);
 
-        // Aumenta a massa
         UpdateMass();
     }
 
@@ -73,8 +77,7 @@ public class PlayerStats : MonoBehaviour
     {
         if (rb != null)
         {
-            rb.mass =
-                1f + coins * 0.2f;
+            rb.mass = 1f + coins * 0.2f;
         }
     }
 
@@ -82,8 +85,10 @@ public class PlayerStats : MonoBehaviour
     {
         coins = 0;
 
-        transform.localScale =
-            originalScale;
+        temporarySpeedBoost = 0f;
+        temporaryForceBoost = 0f;
+
+        transform.localScale = originalScale;
 
         UpdateMass();
 
