@@ -13,6 +13,14 @@ public class MenuUiController : MonoBehaviour
         GameManager.Instance.RequestSceneChange("SeleçãoBolinhas");
     }
 }
+    
+    public void OnStartSlotSave()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.RequestSceneChange("SavingSlotSelection");
+        }
+    }
 
     public void OnQuitClicked()
     {
