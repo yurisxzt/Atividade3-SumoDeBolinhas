@@ -16,9 +16,9 @@ public class BolinhaData : ScriptableObject
     [Header("Stats")]
     public float moveSpeed = 12f;
 
-    public float basePushForce = 800f;
+    public float basePushForce = 1f;
 
-    public float maxPushForce = 1800f;
+    public float maxPushForce = 1f;
 
     public float initialSize = 1f;
 
