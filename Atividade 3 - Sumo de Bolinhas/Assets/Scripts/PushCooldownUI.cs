@@ -6,70 +6,136 @@ public class PushCooldownUI : MonoBehaviour
 {
     private PlayerSpawner spawner;
 
-    private Image player1Bar;
-    private Image player2Bar;
+    private RectTransform player1Fill;
+    private RectTransform player2Fill;
 
     private TMP_Text player1Text;
     private TMP_Text player2Text;
 
     private void Start()
     {
-        spawner = GetComponent<PlayerSpawner>();
+        // Procura o PlayerSpawner mesmo que ele esteja
+        // em outra cena carregada aditivamente.
+        spawner = FindFirstObjectByType<PlayerSpawner>();
 
         CreateUI();
+
+        if (spawner == null)
+        {
+            Debug.LogWarning(
+                "PushCooldownUI: PlayerSpawner não encontrado."
+            );
+        }
     }
 
     private void Update()
     {
+        // Se ainda não encontrou, tenta procurar novamente.
         if (spawner == null)
-            return;
+        {
+            spawner = FindFirstObjectByType<PlayerSpawner>();
+
+            if (spawner == null)
+                return;
+        }
+
+        // ============================
+        // PLAYER 1
+        // ============================
 
         if (spawner.Player1Controller != null)
         {
-            player1Bar.fillAmount =
+            float value =
                 spawner.Player1Controller.PushCooldownNormalized;
 
-            UpdateText(
-                player1Text,
-                spawner.Player1Controller.CanPush
+            value = Mathf.Clamp01(value);
+
+            UpdateBar(
+                player1Fill,
+                value
             );
+
+            if (player1Text != null)
+            {
+                player1Text.text =
+                    spawner.Player1Controller.CanPush
+                    ? "P1 - PRONTO"
+                    : "P1 - CARREGANDO";
+            }
         }
+
+        // ============================
+        // PLAYER 2
+        // ============================
 
         if (spawner.Player2Controller != null)
         {
-            player2Bar.fillAmount =
+            float value =
                 spawner.Player2Controller.PushCooldownNormalized;
 
-            UpdateText(
-                player2Text,
-                spawner.Player2Controller.CanPush
+            value = Mathf.Clamp01(value);
+
+            UpdateBar(
+                player2Fill,
+                value
             );
+
+            if (player2Text != null)
+            {
+                player2Text.text =
+                    spawner.Player2Controller.CanPush
+                    ? "P2 - PRONTO"
+                    : "P2 - CARREGANDO";
+            }
         }
     }
 
-    private void UpdateText(TMP_Text text, bool canPush)
+    // Faz a barra crescer horizontalmente
+    // de 0 até 100%.
+    private void UpdateBar(
+        RectTransform fill,
+        float value)
     {
-        if (text == null)
+        if (fill == null)
             return;
 
-        text.text = canPush
-            ? "EMPURRÃO PRONTO"
-            : "CARREGANDO...";
+        fill.anchorMax =
+            new Vector2(
+                value,
+                1f
+            );
+
+        fill.offsetMin =
+            new Vector2(4f, 4f);
+
+        fill.offsetMax =
+            new Vector2(-4f, -4f);
     }
 
     private void CreateUI()
     {
-        GameObject canvasObject = new GameObject(
-            "PushCooldownCanvas",
-            typeof(Canvas),
-            typeof(CanvasScaler),
-            typeof(GraphicRaycaster)
+        // ============================
+        // CANVAS
+        // ============================
+
+        GameObject canvasObject =
+            new GameObject(
+                "PushCooldownCanvas",
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(GraphicRaycaster)
+            );
+
+        canvasObject.transform.SetParent(
+            transform,
+            false
         );
 
-        canvasObject.transform.SetParent(transform, false);
+        Canvas canvas =
+            canvasObject.GetComponent<Canvas>();
 
-        Canvas canvas = canvasObject.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.renderMode =
+            RenderMode.ScreenSpaceOverlay;
 
         CanvasScaler scaler =
             canvasObject.GetComponent<CanvasScaler>();
@@ -80,73 +146,145 @@ public class PushCooldownUI : MonoBehaviour
         scaler.referenceResolution =
             new Vector2(1920f, 1080f);
 
-        // Jogador 1
-        player1Bar = CreateBar(
+        // ============================
+        // PLAYER 1
+        // ============================
+
+        player1Fill = CreateBar(
             canvasObject.transform,
             "Player1PushBar",
-            new Vector2(250f, -100f),
-            new Vector2(400f, 35f)
+
+            // Mais para cima
+            new Vector2(-300f, -70f),
+
+            new Vector2(350f, 30f)
         );
 
         player1Text = CreateText(
             canvasObject.transform,
             "Player1PushText",
-            new Vector2(250f, -145f)
+            "P1 - PRONTO",
+            new Vector2(-300f, -105f)
         );
 
-        // Jogador 2
-        player2Bar = CreateBar(
+        // ============================
+        // PLAYER 2
+        // ============================
+
+        player2Fill = CreateBar(
             canvasObject.transform,
             "Player2PushBar",
-            new Vector2(-250f, -100f),
-            new Vector2(400f, 35f)
+
+            // Mais para cima
+            new Vector2(300f, -70f),
+
+            new Vector2(350f, 30f)
         );
 
         player2Text = CreateText(
             canvasObject.transform,
             "Player2PushText",
-            new Vector2(-250f, -145f)
+            "P2 - PRONTO",
+            new Vector2(300f, -105f)
         );
     }
 
-    private Image CreateBar(
+    private RectTransform CreateBar(
         Transform parent,
         string name,
         Vector2 position,
-        Vector2 size
-    )
+        Vector2 size)
     {
-        GameObject barObject =
-            new GameObject(name, typeof(Image));
+        // ============================
+        // FUNDO
+        // ============================
 
-        barObject.transform.SetParent(parent, false);
+        GameObject backgroundObject =
+            new GameObject(
+                name + "_Background",
+                typeof(Image)
+            );
 
-        RectTransform rect =
-            barObject.GetComponent<RectTransform>();
+        backgroundObject.transform.SetParent(
+            parent,
+            false
+        );
 
-        rect.anchorMin = new Vector2(0.5f, 1f);
-        rect.anchorMax = new Vector2(0.5f, 1f);
-        rect.pivot = new Vector2(0.5f, 1f);
+        RectTransform backgroundRect =
+            backgroundObject.GetComponent<RectTransform>();
 
-        rect.anchoredPosition = position;
-        rect.sizeDelta = size;
+        backgroundRect.anchorMin =
+            new Vector2(0.5f, 1f);
 
-        Image image =
-            barObject.GetComponent<Image>();
+        backgroundRect.anchorMax =
+            new Vector2(0.5f, 1f);
 
-        image.type = Image.Type.Filled;
-        image.fillMethod = Image.FillMethod.Horizontal;
-        image.fillOrigin = (int)Image.OriginHorizontal.Left;
-        image.fillAmount = 1f;
+        backgroundRect.pivot =
+            new Vector2(0.5f, 1f);
 
-        return image;
+        backgroundRect.anchoredPosition =
+            position;
+
+        backgroundRect.sizeDelta =
+            size;
+
+        Image background =
+            backgroundObject.GetComponent<Image>();
+
+        background.color =
+            new Color(
+                0.1f,
+                0.1f,
+                0.1f,
+                0.8f
+            );
+
+        // ============================
+        // PARTE VERDE
+        // ============================
+
+        GameObject fillObject =
+            new GameObject(
+                name + "_Fill",
+                typeof(Image)
+            );
+
+        fillObject.transform.SetParent(
+            backgroundObject.transform,
+            false
+        );
+
+        RectTransform fillRect =
+            fillObject.GetComponent<RectTransform>();
+
+        // Começa no lado esquerdo
+        fillRect.anchorMin =
+            new Vector2(0f, 0f);
+
+        // Inicialmente cheia
+        fillRect.anchorMax =
+            new Vector2(1f, 1f);
+
+        fillRect.offsetMin =
+            new Vector2(4f, 4f);
+
+        fillRect.offsetMax =
+            new Vector2(-4f, -4f);
+
+        Image fillImage =
+            fillObject.GetComponent<Image>();
+
+        fillImage.color =
+            Color.green;
+
+        return fillRect;
     }
 
     private TMP_Text CreateText(
         Transform parent,
         string name,
-        Vector2 position
-    )
+        string initialText,
+        Vector2 position)
     {
         GameObject textObject =
             new GameObject(
@@ -162,21 +300,32 @@ public class PushCooldownUI : MonoBehaviour
         RectTransform rect =
             textObject.GetComponent<RectTransform>();
 
-        rect.anchorMin = new Vector2(0.5f, 1f);
-        rect.anchorMax = new Vector2(0.5f, 1f);
-        rect.pivot = new Vector2(0.5f, 1f);
+        rect.anchorMin =
+            new Vector2(0.5f, 1f);
 
-        rect.anchoredPosition = position;
-        rect.sizeDelta = new Vector2(400f, 40f);
+        rect.anchorMax =
+            new Vector2(0.5f, 1f);
+
+        rect.pivot =
+            new Vector2(0.5f, 1f);
+
+        rect.anchoredPosition =
+            position;
+
+        rect.sizeDelta =
+            new Vector2(350f, 35f);
 
         TMP_Text text =
             textObject.GetComponent<TextMeshProUGUI>();
 
-        text.fontSize = 22;
+        text.text =
+            initialText;
+
+        text.fontSize =
+            20f;
+
         text.alignment =
             TextAlignmentOptions.Center;
-
-        text.text = "EMPURRÃO PRONTO";
 
         return text;
     }
