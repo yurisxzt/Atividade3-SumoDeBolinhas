@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 7297094049105733162}
   - component: {fileID: 4673077534387192653}
   - component: {fileID: 7773245880609769361}
+  - component: {fileID: 53499012605079409}
   m_Layer: 0
   m_Name: Player 2
   m_TagString: Untagged
@@ -155,10 +156,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TwoBallController
   moveSpeed: 12
-  controlScheme: 1
   basePushForce: 0
   maxPushForce: 0
-  actionKey: 303
+  pushRange: 6
+  maxKnockbackSpeed: 8
+  pushCooldown: 3
 --- !u!114 &7773245880609769361
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -173,3 +175,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BolinhaController
   bolinhaData: {fileID: 0}
   isPlayer1: 0
+--- !u!114 &53499012605079409
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2273262547021173896}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.PlayerInput
+  m_Actions: {fileID: -944628639613478452, guid: e43db3e27952d924e8e56755621cbaec, type: 3}
+  m_NotificationBehavior: 2
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents: []
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: 72b32cf8-3938-49a3-bd0e-d5d1865e3b2c
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}

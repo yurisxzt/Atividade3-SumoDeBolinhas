@@ -18,6 +18,9 @@ public class CharacterSelectionManager : MonoBehaviour
     [SerializeField]
     private TMP_Text p1Stats;
 
+    [SerializeField]
+    private Image p1ColorPreview;
+
     [Header("Player 2")]
     [SerializeField]
     private Image p2Icon;
@@ -27,6 +30,9 @@ public class CharacterSelectionManager : MonoBehaviour
 
     [SerializeField]
     private TMP_Text p2Stats;
+
+    [SerializeField]
+    private Image p2ColorPreview;
 
     private int p1Index;
     private int p2Index;
@@ -76,36 +82,80 @@ public class CharacterSelectionManager : MonoBehaviour
         UpdateUI();
     }
 
-    void UpdateUI()
+    private void UpdateUI()
     {
         UpdatePlayerDisplay(
             availableBalls[p1Index],
             p1Icon,
             p1Name,
-            p1Stats);
+            p1Stats,
+            p1ColorPreview,
+            true
+        );
 
         UpdatePlayerDisplay(
             availableBalls[p2Index],
             p2Icon,
             p2Name,
-            p2Stats);
+            p2Stats,
+            p2ColorPreview,
+            false
+        );
     }
 
-    void UpdatePlayerDisplay(
+    private void UpdatePlayerDisplay(
         BolinhaData data,
         Image icon,
         TMP_Text nameText,
-        TMP_Text statsText)
+        TMP_Text statsText,
+        Image colorPreview,
+        bool isPlayer1)
     {
-        icon.sprite = data.icon;
+        if (data == null)
+            return;
 
-        nameText.text = data.ballName;
+        if (icon != null)
+        {
+            icon.sprite = data.icon;
 
-        statsText.text =
-            $"Velocidade: {data.moveSpeed}\n" +
-            $"Força: {data.basePushForce}\n" +
-            $"Tamanho: {data.initialSize}\n" +
-            $"Jogador 1 - {data.player1Material.color}\n" + $"Jogador 2 - {data.player2Material.color}";
+            // Já mostra o ícone com a cor que será usada no jogo
+            if (isPlayer1 && data.player1Material != null)
+            {
+                icon.color = data.player1Material.color;
+            }
+            else if (!isPlayer1 && data.player2Material != null)
+            {
+                icon.color = data.player2Material.color;
+            }
+        }
+
+        if (nameText != null)
+        {
+            nameText.text = data.ballName;
+        }
+
+        if (statsText != null)
+        {
+            statsText.text =
+                $"Velocidade: {data.moveSpeed}\n" +
+                $"Força: {data.basePushForce}\n" +
+                $"Tamanho: {data.initialSize}";
+        }
+
+        // Quadradinho/círculo mostrando a cor
+        if (colorPreview != null)
+        {
+            if (isPlayer1 && data.player1Material != null)
+            {
+                colorPreview.color =
+                    data.player1Material.color;
+            }
+            else if (!isPlayer1 && data.player2Material != null)
+            {
+                colorPreview.color =
+                    data.player2Material.color;
+            }
+        }
     }
 
     public void StartMatch()
