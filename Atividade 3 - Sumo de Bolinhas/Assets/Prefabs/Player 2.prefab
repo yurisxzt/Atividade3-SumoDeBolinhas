@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 4673077534387192653}
   - component: {fileID: 7773245880609769361}
   - component: {fileID: 53499012605079409}
+  - component: {fileID: -476554229290799340}
   m_Layer: 0
   m_Name: Player 2
   m_TagString: Untagged
@@ -199,9 +200,69 @@ MonoBehaviour:
   m_ControlsChangedEvent:
     m_PersistentCalls:
       m_Calls: []
-  m_ActionEvents: []
+  m_ActionEvents:
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 4cae128b-1c5f-40d3-8384-c35033a1c0a7
+    m_ActionName: 'Player 1/Move[/Keyboard/w,/Keyboard/s,/Keyboard/a,/Keyboard/d]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: ed6d7c01-1fad-46fa-9878-5203a20d02dd
+    m_ActionName: 'Player 1/Push[/Keyboard/minus]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 4673077534387192653}
+        m_TargetAssemblyTypeName: TwoBallController, Assembly-CSharp
+        m_MethodName: OnMove
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 98ced461-aab2-4e72-a0e6-3674fb66ad36
+    m_ActionName: 'Player 2/Move[/Keyboard/upArrow,/Keyboard/rightAlt,/Keyboard/leftAlt,/Keyboard/downArrow]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 4673077534387192653}
+        m_TargetAssemblyTypeName: TwoBallController, Assembly-CSharp
+        m_MethodName: OnPush
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 658d1186-2eb9-4552-a8ca-fbb19444401a
+    m_ActionName: 'Player 2/Push[/Keyboard/rightShift]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
-  m_DefaultActionMap: 72b32cf8-3938-49a3-bd0e-d5d1865e3b2c
+  m_DefaultActionMap: Player 2
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
+--- !u!114 &-476554229290799340
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2273262547021173896}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3725a53912b8e3042a585cd401525088, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStats
+  coins: 0
+  sizePerLevel: 0.15
+  coinsPerLevel: 5
+  forceBonusPerCoin: 25
+  resistanceBonusPerCoin: 0.05
+  speedPenaltyPerCoin: 0.1
+  coinSpeedBoost: 0.15
+  coinForceBoost: 0.1

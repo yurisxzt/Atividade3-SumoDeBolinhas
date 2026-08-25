@@ -5,30 +5,34 @@ using UnityEngine.UI;
 public class CoinScoreboard : MonoBehaviour
 {
     private PlayerSpawner spawner;
+
     private TMP_Text player1Text;
     private TMP_Text player2Text;
 
     private void Start()
     {
         spawner = GetComponent<PlayerSpawner>();
+
         CreateScoreboardUi();
+
         BindStats();
+
         RefreshScoreboard();
     }
 
     private void OnDestroy()
     {
-        if (spawner != null)
-        {
-            if (spawner.Player1Stats != null)
-            {
-                spawner.Player1Stats.OnCoinsChanged -= UpdatePlayer1Score;
-            }
+        if (spawner == null)
+            return;
 
-            if (spawner.Player2Stats != null)
-            {
-                spawner.Player2Stats.OnCoinsChanged -= UpdatePlayer2Score;
-            }
+        if (spawner.Player1Stats != null)
+        {
+            spawner.Player1Stats.OnCoinsChanged -= UpdatePlayer1Score;
+        }
+
+        if (spawner.Player2Stats != null)
+        {
+            spawner.Player2Stats.OnCoinsChanged -= UpdatePlayer2Score;
         }
     }
 
@@ -50,14 +54,22 @@ public class CoinScoreboard : MonoBehaviour
 
     private void RefreshScoreboard()
     {
-        if (player1Text != null && spawner?.Player1Stats != null)
+        if (player1Text != null &&
+            spawner != null &&
+            spawner.Player1Stats != null)
         {
-            player1Text.text = $"Jogador 1: {spawner.Player1Stats.Coins}";
+            player1Text.text =
+                "P1 Moedas: " +
+                spawner.Player1Stats.Coins;
         }
 
-        if (player2Text != null && spawner?.Player2Stats != null)
+        if (player2Text != null &&
+            spawner != null &&
+            spawner.Player2Stats != null)
         {
-            player2Text.text = $"Jogador 2: {spawner.Player2Stats.Coins}";
+            player2Text.text =
+                "P2 Moedas: " +
+                spawner.Player2Stats.Coins;
         }
     }
 
@@ -65,7 +77,8 @@ public class CoinScoreboard : MonoBehaviour
     {
         if (player1Text != null)
         {
-            player1Text.text = $"Jogador 1: {value}";
+            player1Text.text =
+                "P1 Moedas: " + value;
         }
     }
 
@@ -73,49 +86,106 @@ public class CoinScoreboard : MonoBehaviour
     {
         if (player2Text != null)
         {
-            player2Text.text = $"Jogador 2: {value}";
+            player2Text.text =
+                "P2 Moedas: " + value;
         }
     }
 
     private void CreateScoreboardUi()
     {
-        if (player1Text != null && player2Text != null)
-            return;
+        GameObject canvasObject =
+            new GameObject(
+                "CoinScoreboardCanvas",
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(GraphicRaycaster)
+            );
 
-        GameObject canvasObject = new GameObject("CoinScoreboardCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        canvasObject.transform.SetParent(transform, false);
+        canvasObject.transform.SetParent(
+            transform,
+            false
+        );
 
-        Canvas canvas = canvasObject.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        Canvas canvas =
+            canvasObject.GetComponent<Canvas>();
 
-        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
+        canvas.renderMode =
+            RenderMode.ScreenSpaceOverlay;
 
-        player1Text = CreateText(canvasObject.transform, "Player1CoinText", new Vector2(30f, -30f), new Vector2(0f, 1f), new Vector2(0f, 1f));
-        player2Text = CreateText(canvasObject.transform, "Player2CoinText", new Vector2(30f, -80f), new Vector2(0f, 1f), new Vector2(0f, 1f));
+        CanvasScaler scaler =
+            canvasObject.GetComponent<CanvasScaler>();
 
-        player1Text.text = "Jogador 1: 0";
-        player2Text.text = "Jogador 2: 0";
+        scaler.uiScaleMode =
+            CanvasScaler.ScaleMode.ScaleWithScreenSize;
+
+        scaler.referenceResolution =
+            new Vector2(1920f, 1080f);
+
+        // PLAYER 1 - LADO ESQUERDO
+        player1Text = CreateText(
+            canvasObject.transform,
+            "Player1CoinText",
+            "P1 Moedas: 0",
+            new Vector2(30f, -30f),
+            new Vector2(0f, 1f),
+            new Vector2(0f, 1f),
+            new Vector2(0f, 1f),
+            TextAlignmentOptions.TopLeft
+        );
+
+        // PLAYER 2 - LADO DIREITO
+        player2Text = CreateText(
+            canvasObject.transform,
+            "Player2CoinText",
+            "P2 Moedas: 0",
+            new Vector2(-30f, -30f),
+            new Vector2(1f, 1f),
+            new Vector2(1f, 1f),
+            new Vector2(1f, 1f),
+            TextAlignmentOptions.TopRight
+        );
     }
 
-    private TMP_Text CreateText(Transform parent, string name, Vector2 anchorPosition, Vector2 anchorMin, Vector2 anchorMax)
+    private TMP_Text CreateText(
+        Transform parent,
+        string objectName,
+        string initialText,
+        Vector2 position,
+        Vector2 anchorMin,
+        Vector2 anchorMax,
+        Vector2 pivot,
+        TextAlignmentOptions alignment)
     {
-        GameObject textObject = new GameObject(name, typeof(TextMeshProUGUI));
-        textObject.transform.SetParent(parent, false);
+        GameObject textObject =
+            new GameObject(
+                objectName,
+                typeof(TextMeshProUGUI)
+            );
 
-        RectTransform rectTransform = textObject.GetComponent<RectTransform>();
-        rectTransform.anchorMin = anchorMin;
-        rectTransform.anchorMax = anchorMax;
-        rectTransform.pivot = new Vector2(0f, 1f);
-        rectTransform.anchoredPosition = anchorPosition;
-        rectTransform.sizeDelta = new Vector2(500f, 40f);
+        textObject.transform.SetParent(
+            parent,
+            false
+        );
 
-        TMP_Text text = textObject.GetComponent<TextMeshProUGUI>();
-        text.fontSize = 28;
-        text.color = Color.white;
-        text.alignment = TextAlignmentOptions.TopLeft;
-        text.enableVertexGradient = true;
+        RectTransform rect =
+            textObject.GetComponent<RectTransform>();
+
+        rect.anchorMin = anchorMin;
+        rect.anchorMax = anchorMax;
+        rect.pivot = pivot;
+
+        rect.anchoredPosition =
+            position;
+
+        rect.sizeDelta =
+            new Vector2(350f, 50f);
+
+        TMP_Text text =
+            textObject.GetComponent<TextMeshProUGUI>();
+
+        text.text = initialText;
+        text.fontSize = 28f;
+        text.alignment = alignment;
 
         return text;
     }

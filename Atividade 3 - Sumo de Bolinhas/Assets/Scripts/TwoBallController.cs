@@ -7,7 +7,7 @@ public class TwoBallController : MonoBehaviour
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 12f;
 
-    [Header("Action")]
+    [Header("Push")]
     [SerializeField] private float basePushForce = 3f;
     [SerializeField] private float maxPushForce = 7f;
     [SerializeField] private float pushRange = 6f;
@@ -30,13 +30,11 @@ public class TwoBallController : MonoBehaviour
             if (pushCooldown <= 0f)
                 return 1f;
 
-            return 1f -
-                (pushCooldownTimer / pushCooldown);
+            return 1f - (pushCooldownTimer / pushCooldown);
         }
     }
 
-    public bool CanPush =>
-        pushCooldownTimer <= 0f;
+    public bool CanPush => pushCooldownTimer <= 0f;
 
     private void Awake()
     {
@@ -44,23 +42,20 @@ public class TwoBallController : MonoBehaviour
 
         if (rb == null)
         {
-            rb =
-                gameObject.AddComponent<Rigidbody>();
+            rb = gameObject.AddComponent<Rigidbody>();
         }
 
         rb.linearDamping = 0.8f;
         rb.angularDamping = 0.2f;
 
-        stats =
-            GetComponent<PlayerStats>();
+        stats = GetComponent<PlayerStats>();
     }
 
     private void Update()
     {
         if (pushCooldownTimer > 0f)
         {
-            pushCooldownTimer -=
-                Time.deltaTime;
+            pushCooldownTimer -= Time.deltaTime;
 
             if (pushCooldownTimer < 0f)
             {
@@ -78,41 +73,33 @@ public class TwoBallController : MonoBehaviour
                 moveInput.y
             );
 
-        if (
-            moveDirection.sqrMagnitude >
-            0.01f
-        )
+        if (moveDirection.sqrMagnitude > 0.01f)
         {
-            float speed =
-                moveSpeed;
+            float speed = moveSpeed;
 
             if (stats != null)
             {
-                speed *=
-                    stats.SpeedMultiplier;
+                speed *= stats.SpeedMultiplier;
             }
 
             rb.AddForce(
-                moveDirection.normalized *
-                speed,
+                moveDirection.normalized * speed,
                 ForceMode.Acceleration
             );
         }
     }
 
-    // ========================================
-    // INPUT EVENTS
-    // ========================================
+    // =========================================================
+    // INPUT SYSTEM
+    // =========================================================
 
-    public void OnMove(
-        InputAction.CallbackContext context)
+    public void OnMove(InputAction.CallbackContext context)
     {
         moveInput =
             context.ReadValue<Vector2>();
     }
 
-    public void OnPush(
-        InputAction.CallbackContext context)
+    public void OnPush(InputAction.CallbackContext context)
     {
         if (!context.performed)
             return;
@@ -120,9 +107,9 @@ public class TwoBallController : MonoBehaviour
         ApplyPush();
     }
 
-    // ========================================
+    // =========================================================
     // EMPURRÃO
-    // ========================================
+    // =========================================================
 
     private void ApplyPush()
     {
@@ -130,20 +117,16 @@ public class TwoBallController : MonoBehaviour
             return;
 
         TwoBallController[] players =
-            FindObjectsOfType<TwoBallController>();
+            FindObjectsByType<TwoBallController>(
+                FindObjectsSortMode.None
+            );
 
-        if (
-            players == null ||
-            players.Length < 2
-        )
+        if (players == null || players.Length < 2)
             return;
 
         TwoBallController enemy = null;
 
-        foreach (
-            TwoBallController candidate
-            in players
-        )
+        foreach (TwoBallController candidate in players)
         {
             if (
                 candidate != null &&
@@ -164,6 +147,7 @@ public class TwoBallController : MonoBehaviour
         if (enemyRb == null)
             return;
 
+        // Direção entre a minha bolinha e a inimiga
         Vector3 offset =
             enemy.transform.position -
             transform.position;
@@ -179,6 +163,7 @@ public class TwoBallController : MonoBehaviour
         Vector3 direction =
             offset.normalized;
 
+        // Quanto mais perto, maior o empurrão
         float proximity =
             1f -
             Mathf.Clamp01(
@@ -192,6 +177,7 @@ public class TwoBallController : MonoBehaviour
                 proximity
             );
 
+        // Bônus das moedas
         if (stats != null)
         {
             float forceMultiplier =
@@ -201,10 +187,10 @@ public class TwoBallController : MonoBehaviour
                     1.5f
                 );
 
-            pushStrength *=
-                forceMultiplier;
+            pushStrength *= forceMultiplier;
         }
 
+        // Resistência da bolinha inimiga
         PlayerStats enemyStats =
             enemy.GetComponent<PlayerStats>();
 
@@ -217,23 +203,24 @@ public class TwoBallController : MonoBehaviour
                     2.5f
                 );
 
-            pushStrength /=
-                resistance;
+            pushStrength /= resistance;
         }
 
+        // Empurra somente a bolinha inimiga
         enemyRb.AddForce(
             direction * pushStrength,
             ForceMode.VelocityChange
         );
 
-        Vector3 velocity =
+        // Limita velocidade para evitar empurrão absurdo
+        Vector3 currentVelocity =
             enemyRb.linearVelocity;
 
         Vector3 horizontalVelocity =
             new Vector3(
-                velocity.x,
+                currentVelocity.x,
                 0f,
-                velocity.z
+                currentVelocity.z
             );
 
         horizontalVelocity =
@@ -245,21 +232,26 @@ public class TwoBallController : MonoBehaviour
         enemyRb.linearVelocity =
             new Vector3(
                 horizontalVelocity.x,
-                velocity.y,
+                currentVelocity.y,
                 horizontalVelocity.z
             );
 
+        // Começa cooldown
         pushCooldownTimer =
             pushCooldown;
     }
 
+    // =========================================================
+    // CONFIGURAÇÃO PELO BOLINHADATA
+    // =========================================================
+
     public void Configure(
         float speed,
         float push,
-        float maxPush)
+        float maxPush
+    )
     {
-        moveSpeed =
-            speed;
+        moveSpeed = speed;
 
         basePushForce =
             Mathf.Clamp(
