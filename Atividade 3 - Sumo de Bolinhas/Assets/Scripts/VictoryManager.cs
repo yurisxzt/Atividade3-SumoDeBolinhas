@@ -26,4 +26,11 @@ public class VictoryManager : MonoBehaviour
             .ForceSceneChange(
                 "SeleçãoBolinhas");
     }
+    
+    public void ReturnToMenu()
+    {
+        GameManager.Instance
+            .ForceSceneChange(
+                "MenuPrincipal");
+    }
 }
