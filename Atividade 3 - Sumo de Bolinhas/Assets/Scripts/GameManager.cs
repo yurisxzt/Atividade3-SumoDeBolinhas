@@ -344,6 +344,21 @@ public class GameManager : MonoBehaviour
     }
 
     // =========================================================
+    // HELPERS DE TROCA DE CENA
+    // =========================================================
+
+    public void GoToFase2()
+    {
+        ForceSceneChange("Fase2");
+    }
+
+    public void GoToVictoryFinal()
+    {
+        ForceSceneChange("VictoryFinal");
+    }
+
+
+    // =========================================================
     // ALTERAR ESTADO
     // =========================================================
 

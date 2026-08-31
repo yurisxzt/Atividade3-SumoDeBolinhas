@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 [DisallowMultipleComponent]
 public class TwoBallController : MonoBehaviour
@@ -266,5 +267,87 @@ public class TwoBallController : MonoBehaviour
                 5f,
                 9f
             );
+    }
+
+    // =========================================================
+    // SAVE / LOAD
+    // =========================================================
+
+    [Header("Save")]
+    [SerializeField]
+    private int saveSlot = 0;
+
+    public void SaveCurrentProgress()
+    {
+        if (SaveManager.Instance == null)
+        {
+            Debug.LogWarning("SaveManager not found. Cannot save.");
+            return;
+        }
+
+        var save = new SaveData();
+        save.sceneName = SceneManager.GetActiveScene().name;
+        save.playerPosition = transform.position;
+
+        var hud = FindObjectOfType<HUDController>();
+        if (hud != null)
+            save.coins = hud.Coins;
+
+        var level = FindObjectOfType<LevelManager>();
+        if (level != null)
+        {
+            // If LevelManager exposes a CurrentLevel property, use it; otherwise skip
+            var prop = level.GetType().GetProperty("CurrentLevel");
+            if (prop != null)
+            {
+                var val = prop.GetValue(level);
+                if (val is int intVal) save.levelIndex = intVal;
+            }
+        }
+
+        SaveManager.Instance.SaveToSlot(saveSlot, save);
+        Debug.Log($"Saved progress to slot {saveSlot}");
+    }
+
+    public void LoadProgress(int slot = -1)
+    {
+        if (SaveManager.Instance == null)
+        {
+            Debug.LogWarning("SaveManager not found. Cannot load.");
+            return;
+        }
+
+        int useSlot = slot < 0 ? saveSlot : slot;
+        var data = SaveManager.Instance.LoadFromSlot(useSlot);
+
+        if (data == null)
+        {
+            Debug.Log($"No save found in slot {useSlot}");
+            return;
+        }
+
+        // If the save points to a different scene, load it first
+        if (!string.IsNullOrEmpty(data.sceneName) && data.sceneName != SceneManager.GetActiveScene().name)
+        {
+            // load scene and then apply position via a coroutine on GameManager or other loader
+            GameManager.Instance.ForceSceneChange(data.sceneName);
+            // Note: positional restore after scene load requires a small delay — handled by LevelManager or a loader hook
+            Debug.Log($"Requested scene change to {data.sceneName} for loading save slot {useSlot}");
+            return;
+        }
+
+        // apply position and coins
+        transform.position = data.playerPosition;
+
+        var hud2 = FindObjectOfType<HUDController>();
+        if (hud2 != null)
+            hud2.SetCoins(data.coins);
+
+        Debug.Log($"Loaded save from slot {useSlot}");
+    }
+
+    private void OnApplicationQuit()
+    {
+        SaveCurrentProgress();
     }
 }

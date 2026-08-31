@@ -6,19 +6,60 @@
 /// </summary>
 public class MenuUiController : MonoBehaviour
 {
-    public void OnStartClicked()
-{
-    if (GameManager.Instance != null)
+    [Header("Scenes")]
+    public string firstLevelScene = "SampleScene";
+    public string saveSlotScene = "SavingSlotSelection";
+
+    [Header("UI")]
+    public GameObject continueButton;
+
+    private void Start()
     {
-        GameManager.Instance.RequestSceneChange("SeleçãoBolinhas");
+        UpdateContinueButton();
     }
-}
-    
-    public void OnStartSlotSave()
+
+    private void OnEnable()
+    {
+        UpdateContinueButton();
+    }
+
+    public void UpdateContinueButton()
+    {
+        if (continueButton == null) return;
+        bool hasAuto = SaveManager.Instance != null && SaveManager.Instance.SlotExists(0);
+        continueButton.SetActive(hasAuto);
+    }
+
+    public void OnNewGameClicked()
     {
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.RequestSceneChange("SavingSlotSelection");
+            GameManager.Instance.ForceSceneChange(firstLevelScene);
+        }
+    }
+
+    public void OnContinueClicked()
+    {
+        // load from autosave slot 0
+        if (SaveRestoreManager.Instance != null)
+        {
+            SaveRestoreManager.Instance.RequestLoadSlot(0);
+        }
+        else if (SaveManager.Instance != null && SaveManager.Instance.SlotExists(0))
+        {
+            var data = SaveManager.Instance.LoadFromSlot(0);
+            if (data != null && GameManager.Instance != null)
+            {
+                GameManager.Instance.ForceSceneChange(data.sceneName);
+            }
+        }
+    }
+
+    public void OnLoadGameClicked()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.RequestSceneChange(saveSlotScene);
         }
     }
 
