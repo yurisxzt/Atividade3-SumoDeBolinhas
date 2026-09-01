@@ -1844,7 +1844,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MenuUiController
   firstLevelScene: Fase1
   saveSlotScene: Fase1
-  continueButton: {fileID: 831438122}
+  continueButton: {fileID: 16114154}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

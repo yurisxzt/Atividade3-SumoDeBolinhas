@@ -916,7 +916,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MenuPrincipalController
   selecaoBolinhasScene: "Sele\xE7\xE3oBolinhas"
-  jogoComSaveScene: Fase1
+  jogoComSaveScene: Menu Inicial
 --- !u!1 &1366795082
 GameObject:
   m_ObjectHideFlags: 0
@@ -1610,7 +1610,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_VertexColorAlwaysGammaSpace: 0
+  m_VertexColorAlwaysGammaSpace: 1
   m_UseReflectionProbes: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
