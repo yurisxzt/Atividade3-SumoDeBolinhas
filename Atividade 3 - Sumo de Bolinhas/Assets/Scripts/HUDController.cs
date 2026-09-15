@@ -23,11 +23,13 @@ public class HUDController : MonoBehaviour
     // MOEDAS
     // =========================================================
 
-    // Fase 1 possui exatamente 9 moedas
-    private const int totalCoins = 9;
+    [Header("Coins")]
+    [SerializeField]
+    private int totalCoins = 9;
 
     private int currentCoins = 0;
 
+    // Quantidade de moedas coletadas
     public int Coins
     {
         get
@@ -38,6 +40,15 @@ public class HUDController : MonoBehaviour
             }
 
             return currentCoins;
+        }
+    }
+
+    // Total de moedas da fase
+    public int TotalCoins
+    {
+        get
+        {
+            return totalCoins;
         }
     }
 
@@ -96,14 +107,13 @@ public class HUDController : MonoBehaviour
             return;
         }
 
-        GameObject coinTextObject =
+        GameObject objectCoinText =
             GameObject.Find("CoinText");
 
-        if (coinTextObject != null)
+        if (objectCoinText != null)
         {
             coinText =
-                coinTextObject
-                    .GetComponent<TMP_Text>();
+                objectCoinText.GetComponent<TMP_Text>();
         }
 
         if (coinText == null)
@@ -115,7 +125,7 @@ public class HUDController : MonoBehaviour
     }
 
     // =========================================================
-    // LOCALIZAR PLAYER STATS
+    // LOCALIZAR PLAYER
     // =========================================================
 
     private void ResolvePlayerStats()
@@ -137,7 +147,7 @@ public class HUDController : MonoBehaviour
     }
 
     // =========================================================
-    // CONECTAR EVENTO
+    // EVENTO DAS MOEDAS
     // =========================================================
 
     private void BindPlayerStats()
@@ -153,10 +163,6 @@ public class HUDController : MonoBehaviour
         playerStats.OnCoinsChanged +=
             OnCoinsChanged;
     }
-
-    // =========================================================
-    // QUANDO PEGAR MOEDA
-    // =========================================================
 
     private void OnCoinsChanged(
         int value
@@ -186,7 +192,7 @@ public class HUDController : MonoBehaviour
     }
 
     // =========================================================
-    // DEFINIR MOEDAS
+    // DEFINIR MOEDAS ATUAIS
     // =========================================================
 
     public void SetCoins(
@@ -194,10 +200,9 @@ public class HUDController : MonoBehaviour
     )
     {
         value =
-            Mathf.Clamp(
-                value,
+            Mathf.Max(
                 0,
-                totalCoins
+                value
             );
 
         if (playerStats != null)
@@ -208,6 +213,42 @@ public class HUDController : MonoBehaviour
         }
 
         currentCoins = value;
+
+        UpdateUI();
+    }
+
+    // =========================================================
+    // DEFINIR TOTAL DE MOEDAS
+    // =========================================================
+
+    public void SetTotalCoins(
+        int total
+    )
+    {
+        if (total < 0)
+        {
+            total = 0;
+        }
+
+        totalCoins = total;
+
+        UpdateUI();
+    }
+
+    // =========================================================
+    // RESETAR MOEDAS
+    // =========================================================
+
+    public void ResetCoins()
+    {
+        if (playerStats != null)
+        {
+            playerStats.SetCoins(0);
+
+            return;
+        }
+
+        currentCoins = 0;
 
         UpdateUI();
     }
@@ -227,7 +268,8 @@ public class HUDController : MonoBehaviour
         coinText.color =
             Color.black;
 
-        // Exemplo: Moedas: 0/9
+        // Exemplo:
+        // Moedas: 0/9
         coinText.text =
             "Moedas: "
             + Coins

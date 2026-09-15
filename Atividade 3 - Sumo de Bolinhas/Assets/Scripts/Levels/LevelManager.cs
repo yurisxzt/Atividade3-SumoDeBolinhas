@@ -5,34 +5,77 @@ using UnityEngine.UI;
 
 public class LevelManager : MonoBehaviour
 {
+    // =========================================================
+    // PRÓXIMA FASE
+    // =========================================================
+
     [Header("Fase seguinte")]
-    public string nextLevelSceneName = "Fase2";
+    [SerializeField]
+    private string nextLevelSceneName = "Fase2";
 
-    [Header("Mensagem")]
-    public string victoryMessage = "Vitória! Pressione Espaço para continuar.";
+    // =========================================================
+    // MOEDAS
+    // =========================================================
 
-    [Header("UI de Vitória")]
-    public GameObject victoryPanel;
-    public Text victoryTitleText;
-    public Text victoryCoinsText;
-    public Button nextLevelButton;
+    [Header("Moedas da fase")]
+    [SerializeField]
+    private int totalCoinsInLevel = 9;
 
-    private bool waitingForNextLevel;
-    private int totalCoinsInLevel;
+    // =========================================================
+    // VITÓRIA
+    // =========================================================
+
+    [Header("Vitória")]
+    [SerializeField]
+    private string victoryMessage =
+        "Vitória! Pressione Espaço para continuar.";
+
+    [SerializeField]
+    private GameObject victoryPanel;
+
+    [SerializeField]
+    private Text victoryTitleText;
+
+    [SerializeField]
+    private Text victoryCoinsText;
+
+    [SerializeField]
+    private Button nextLevelButton;
+
+    private bool waitingForNextLevel = false;
+
+    // =========================================================
+    // START
+    // =========================================================
 
     private void Start()
     {
-        totalCoinsInLevel = FindObjectsByType<Coin>(FindObjectsSortMode.None).Length;
-        EnsureUiReferences();
-        if (victoryPanel != null) victoryPanel.SetActive(false);
-        if (nextLevelButton != null) nextLevelButton.gameObject.SetActive(false);
+        // Atualiza o HUD com o total de moedas da fase
+        HUDController hud =
+            FindFirstObjectByType<HUDController>();
 
-        HUDController hud = FindFirstObjectByType<HUDController>();
         if (hud != null)
         {
-            hud.SetTotalCoins(totalCoinsInLevel);
+            hud.SetTotalCoins(
+                totalCoinsInLevel
+            );
+        }
+
+        // Esconde painel de vitória no início
+        if (victoryPanel != null)
+        {
+            victoryPanel.SetActive(false);
+        }
+
+        if (nextLevelButton != null)
+        {
+            nextLevelButton.gameObject.SetActive(false);
         }
     }
+
+    // =========================================================
+    // UPDATE
+    // =========================================================
 
     private void Update()
     {
@@ -41,11 +84,19 @@ public class LevelManager : MonoBehaviour
             return;
         }
 
-        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+        // Espaço continua para próxima fase
+        if (
+            Keyboard.current != null &&
+            Keyboard.current.spaceKey.wasPressedThisFrame
+        )
         {
             GoToNextLevel();
         }
     }
+
+    // =========================================================
+    // VITÓRIA
+    // =========================================================
 
     public void OnVictory()
     {
@@ -56,29 +107,40 @@ public class LevelManager : MonoBehaviour
 
         waitingForNextLevel = true;
 
-        HUDController hud = FindFirstObjectByType<HUDController>();
-        int collectedCoins = hud != null ? hud.Coins : 0;
-        ShowVictoryPanel(collectedCoins, totalCoinsInLevel);
-        Debug.Log(victoryMessage + " Total: " + collectedCoins + " / " + totalCoinsInLevel);
+        HUDController hud =
+            FindFirstObjectByType<HUDController>();
 
-        if (SaveManager.Instance != null)
+        int collectedCoins = 0;
+
+        if (hud != null)
         {
-            var save = new SaveData
-            {
-                sceneName = SceneManager.GetActiveScene().name,
-                coins = collectedCoins,
-                checkpointPassed = true,
-                collectedCoinIds = new System.Collections.Generic.List<string>(SaveManager.Instance.CurrentCollectedCoins)
-            };
-
-            SaveManager.Instance.SaveToSlot(0, save);
+            collectedCoins =
+                hud.Coins;
         }
+
+        ShowVictoryPanel(
+            collectedCoins,
+            totalCoinsInLevel
+        );
+
+        Debug.Log(
+            victoryMessage
+            + " Moedas: "
+            + collectedCoins
+            + "/"
+            + totalCoinsInLevel
+        );
     }
 
-    private void ShowVictoryPanel(int collectedCoins, int totalCoins)
-    {
-        EnsureUiReferences();
+    // =========================================================
+    // MOSTRAR PAINEL
+    // =========================================================
 
+    private void ShowVictoryPanel(
+        int collectedCoins,
+        int totalCoins
+    )
+    {
         if (victoryPanel != null)
         {
             victoryPanel.SetActive(true);
@@ -86,71 +148,61 @@ public class LevelManager : MonoBehaviour
 
         if (victoryTitleText != null)
         {
-            victoryTitleText.text = "Vitória!";
+            victoryTitleText.text =
+                "Vitória!";
         }
 
         if (victoryCoinsText != null)
         {
-            victoryCoinsText.text = $"Você coletou {collectedCoins} de {totalCoins} moedas.";
+            victoryCoinsText.text =
+                "Moedas: "
+                + collectedCoins
+                + "/"
+                + totalCoins;
         }
 
         if (nextLevelButton != null)
         {
             nextLevelButton.gameObject.SetActive(true);
+
             nextLevelButton.onClick.RemoveAllListeners();
-            nextLevelButton.onClick.AddListener(GoToNextLevel);
+
+            nextLevelButton.onClick.AddListener(
+                GoToNextLevel
+            );
         }
     }
 
+    // =========================================================
+    // PRÓXIMA FASE
+    // =========================================================
+
     public void GoToNextLevel()
     {
-        if (string.IsNullOrEmpty(nextLevelSceneName))
+        if (
+            string.IsNullOrEmpty(
+                nextLevelSceneName
+            )
+        )
         {
-            Debug.LogWarning("LevelManager: nextLevelSceneName está vazio.");
+            Debug.LogWarning(
+                "LevelManager: próxima fase não configurada."
+            );
+
             return;
         }
 
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.ForceSceneChange(nextLevelSceneName);
+            GameManager.Instance.ForceSceneChange(
+                nextLevelSceneName
+            );
+
             return;
         }
 
-        SceneManager.LoadScene(nextLevelSceneName);
-    }
-
-    private void EnsureUiReferences()
-    {
-        if (victoryPanel == null)
-        {
-            victoryPanel = GameObject.Find("VictoryPanel");
-        }
-
-        if (victoryTitleText == null)
-        {
-            Text titleText = GameObject.Find("VictoryTitleText")?.GetComponent<Text>();
-            if (titleText != null)
-            {
-                victoryTitleText = titleText;
-            }
-        }
-
-        if (victoryCoinsText == null)
-        {
-            Text coinsText = GameObject.Find("VictoryCoinsText")?.GetComponent<Text>();
-            if (coinsText != null)
-            {
-                victoryCoinsText = coinsText;
-            }
-        }
-
-        if (nextLevelButton == null)
-        {
-            Button button = GameObject.Find("NextLevelButton")?.GetComponent<Button>();
-            if (button != null)
-            {
-                nextLevelButton = button;
-            }
-        }
+        SceneManager.LoadScene(
+            nextLevelSceneName
+        );
     }
 }
