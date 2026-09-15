@@ -3,247 +3,405 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 [DisallowMultipleComponent]
+[RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(PlayerInput))]
 public class TwoBallController : MonoBehaviour
 {
+    // =========================================================
+    // MOVIMENTO
+    // =========================================================
+
     [Header("Movement")]
-    [SerializeField] private float moveSpeed = 12f;
+    [SerializeField]
+    private float moveSpeed = 12f;
 
-    [Header("Push")]
-    [SerializeField] private float basePushForce = 3f;
-    [SerializeField] private float maxPushForce = 7f;
-    [SerializeField] private float pushRange = 6f;
-    [SerializeField] private float maxKnockbackSpeed = 8f;
+    [SerializeField]
+    private float maxMoveSpeed = 8f;
 
-    [Header("Push Cooldown")]
-    [SerializeField] private float pushCooldown = 3f;
+    // =========================================================
+    // PULO
+    // =========================================================
 
-    private float pushCooldownTimer = 0f;
+    [Header("Jump")]
+    [SerializeField]
+    private float jumpForce = 7f;
+
+    [SerializeField]
+    private float groundCheckExtraDistance = 0.15f;
+
+    // =========================================================
+    // SAVE
+    // =========================================================
+
+    [Header("Save")]
+    [SerializeField]
+    private int saveSlot = 0;
+
+    // =========================================================
+    // COMPONENTES
+    // =========================================================
 
     private Rigidbody rb;
+
+    private PlayerInput playerInput;
+
     private PlayerStats stats;
+
+    private Collider playerCollider;
+
+    // =========================================================
+    // INPUT ACTIONS
+    // =========================================================
+
+    private InputAction moveAction;
+
+    private InputAction jumpAction;
 
     private Vector2 moveInput;
 
-    public float PushCooldownNormalized
-    {
-        get
-        {
-            if (pushCooldown <= 0f)
-                return 1f;
+    // =========================================================
+    // ESTADO
+    // =========================================================
 
-            return 1f - (pushCooldownTimer / pushCooldown);
-        }
-    }
+    private bool isGrounded;
 
-    public bool CanPush => pushCooldownTimer <= 0f;
+    public bool IsGrounded =>
+        isGrounded;
+
+    // =========================================================
+    // COMPATIBILIDADE COM SCRIPTS ANTIGOS DO SUMÔ
+    // =========================================================
+
+    public bool CanPush =>
+        true;
+
+    public float PushCooldownNormalized =>
+        1f;
+
+    // =========================================================
+    // AWAKE
+    // =========================================================
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody>();
+        rb =
+            GetComponent<Rigidbody>();
 
-        if (rb == null)
-        {
-            rb = gameObject.AddComponent<Rigidbody>();
-        }
+        playerInput =
+            GetComponent<PlayerInput>();
+
+        stats =
+            GetComponent<PlayerStats>();
+
+        playerCollider =
+            GetComponent<Collider>();
+
+        // Física da bolinha
+        rb.useGravity = true;
+
+        rb.isKinematic = false;
 
         rb.linearDamping = 0.8f;
+
         rb.angularDamping = 0.2f;
 
-        stats = GetComponent<PlayerStats>();
+        // =====================================================
+        // INPUT SYSTEM
+        // =====================================================
+
+        if (
+            playerInput != null &&
+            playerInput.actions != null
+        )
+        {
+            // Usa especificamente o Action Map "Player"
+            InputActionMap playerMap =
+                playerInput.actions.FindActionMap(
+                    "Player",
+                    false
+                );
+
+            if (playerMap != null)
+            {
+                playerMap.Enable();
+
+                moveAction =
+                    playerMap.FindAction(
+                        "Move",
+                        false
+                    );
+
+                jumpAction =
+                    playerMap.FindAction(
+                        "Jump",
+                        false
+                    );
+            }
+        }
+
+        // =====================================================
+        // DEBUG
+        // =====================================================
+
+        if (moveAction == null)
+        {
+            Debug.LogError(
+                "ERRO: ação 'Move' não encontrada no Action Map 'Player'."
+            );
+        }
+
+        if (jumpAction == null)
+        {
+            Debug.LogError(
+                "ERRO: ação 'Jump' não encontrada no Action Map 'Player'."
+            );
+        }
     }
+
+    // =========================================================
+    // ON ENABLE
+    // =========================================================
+
+    private void OnEnable()
+    {
+        if (moveAction != null)
+        {
+            moveAction.Enable();
+        }
+
+        if (jumpAction != null)
+        {
+            jumpAction.Enable();
+        }
+    }
+
+    // =========================================================
+    // UPDATE
+    // =========================================================
 
     private void Update()
     {
-        if (pushCooldownTimer > 0f)
-        {
-            pushCooldownTimer -= Time.deltaTime;
+        ReadMovement();
 
-            if (pushCooldownTimer < 0f)
-            {
-                pushCooldownTimer = 0f;
-            }
-        }
+        CheckGround();
+
+        ReadJump();
     }
+
+    // =========================================================
+    // FIXED UPDATE
+    // =========================================================
 
     private void FixedUpdate()
     {
-        Vector3 moveDirection =
+        MovePlayer();
+
+        LimitSpeed();
+    }
+
+    // =========================================================
+    // INPUT - MOVIMENTO
+    // =========================================================
+
+    private void ReadMovement()
+    {
+        if (moveAction == null)
+        {
+            moveInput =
+                Vector2.zero;
+
+            return;
+        }
+
+        moveInput =
+            moveAction.ReadValue<Vector2>();
+    }
+
+    // =========================================================
+    // MOVIMENTO
+    // =========================================================
+
+    private void MovePlayer()
+    {
+        Vector3 direction =
             new Vector3(
                 moveInput.x,
                 0f,
                 moveInput.y
             );
 
-        if (moveDirection.sqrMagnitude > 0.01f)
+        if (
+            direction.sqrMagnitude
+            < 0.01f
+        )
         {
-            float speed = moveSpeed;
-
-            if (stats != null)
-            {
-                speed *= stats.SpeedMultiplier;
-            }
-
-            rb.AddForce(
-                moveDirection.normalized * speed,
-                ForceMode.Acceleration
-            );
-        }
-    }
-
-    // =========================================================
-    // INPUT SYSTEM
-    // =========================================================
-
-    public void OnMove(InputAction.CallbackContext context)
-    {
-        moveInput =
-            context.ReadValue<Vector2>();
-    }
-
-    public void OnPush(InputAction.CallbackContext context)
-    {
-        if (!context.performed)
             return;
-
-        ApplyPush();
-    }
-
-    // =========================================================
-    // EMPURRÃO
-    // =========================================================
-
-    private void ApplyPush()
-    {
-        if (!CanPush)
-            return;
-
-        TwoBallController[] players =
-            FindObjectsByType<TwoBallController>(
-                FindObjectsSortMode.None
-            );
-
-        if (players == null || players.Length < 2)
-            return;
-
-        TwoBallController enemy = null;
-
-        foreach (TwoBallController candidate in players)
-        {
-            if (
-                candidate != null &&
-                candidate != this
-            )
-            {
-                enemy = candidate;
-                break;
-            }
         }
 
-        if (enemy == null)
-            return;
+        float speed =
+            moveSpeed;
 
-        Rigidbody enemyRb =
-            enemy.GetComponent<Rigidbody>();
-
-        if (enemyRb == null)
-            return;
-
-        // Direção entre a minha bolinha e a inimiga
-        Vector3 offset =
-            enemy.transform.position -
-            transform.position;
-
-        offset.y = 0f;
-
-        float distance =
-            offset.magnitude;
-
-        if (distance < 0.01f)
-            return;
-
-        Vector3 direction =
-            offset.normalized;
-
-        // Quanto mais perto, maior o empurrão
-        float proximity =
-            1f -
-            Mathf.Clamp01(
-                distance / pushRange
-            );
-
-        float pushStrength =
-            Mathf.Lerp(
-                basePushForce,
-                maxPushForce,
-                proximity
-            );
-
-        // Bônus das moedas
+        // Continua compatível com PlayerStats
         if (stats != null)
         {
-            float forceMultiplier =
-                Mathf.Clamp(
-                    stats.ForceMultiplier,
-                    1f,
-                    1.5f
-                );
-
-            pushStrength *= forceMultiplier;
+            speed *=
+                stats.SpeedMultiplier;
         }
 
-        // Resistência da bolinha inimiga
-        PlayerStats enemyStats =
-            enemy.GetComponent<PlayerStats>();
-
-        if (enemyStats != null)
-        {
-            float resistance =
-                Mathf.Clamp(
-                    enemyStats.ResistanceMultiplier,
-                    1f,
-                    2.5f
-                );
-
-            pushStrength /= resistance;
-        }
-
-        // Empurra somente a bolinha inimiga
-        enemyRb.AddForce(
-            direction * pushStrength,
-            ForceMode.VelocityChange
+        rb.AddForce(
+            direction.normalized
+            * speed,
+            ForceMode.Acceleration
         );
+    }
 
-        // Limita velocidade para evitar empurrão absurdo
-        Vector3 currentVelocity =
-            enemyRb.linearVelocity;
+    // =========================================================
+    // LIMITAR VELOCIDADE
+    // =========================================================
+
+    private void LimitSpeed()
+    {
+        Vector3 velocity =
+            rb.linearVelocity;
 
         Vector3 horizontalVelocity =
             new Vector3(
-                currentVelocity.x,
+                velocity.x,
                 0f,
-                currentVelocity.z
+                velocity.z
             );
 
         horizontalVelocity =
             Vector3.ClampMagnitude(
                 horizontalVelocity,
-                maxKnockbackSpeed
+                maxMoveSpeed
             );
 
-        enemyRb.linearVelocity =
+        rb.linearVelocity =
             new Vector3(
                 horizontalVelocity.x,
-                currentVelocity.y,
+                velocity.y,
                 horizontalVelocity.z
             );
-
-        // Começa cooldown
-        pushCooldownTimer =
-            pushCooldown;
     }
 
     // =========================================================
-    // CONFIGURAÇÃO PELO BOLINHADATA
+    // INPUT - PULO
+    // =========================================================
+
+    private void ReadJump()
+    {
+        if (jumpAction == null)
+        {
+            return;
+        }
+
+        if (
+            jumpAction.WasPressedThisFrame()
+        )
+        {
+            Jump();
+        }
+    }
+
+    // =========================================================
+    // PULO
+    // =========================================================
+
+    private void Jump()
+    {
+        if (!isGrounded)
+        {
+            return;
+        }
+
+        Vector3 velocity =
+            rb.linearVelocity;
+
+        velocity.y = 0f;
+
+        rb.linearVelocity =
+            velocity;
+
+        rb.AddForce(
+            Vector3.up
+            * jumpForce,
+            ForceMode.Impulse
+        );
+
+        isGrounded = false;
+    }
+
+    // =========================================================
+    // DETECTAR CHÃO
+    // =========================================================
+
+    private void CheckGround()
+    {
+        if (playerCollider == null)
+        {
+            isGrounded = false;
+
+            return;
+        }
+
+        float distance =
+            playerCollider.bounds.extents.y
+            + groundCheckExtraDistance;
+
+        isGrounded =
+            Physics.Raycast(
+                transform.position,
+                Vector3.down,
+                distance,
+                ~0,
+                QueryTriggerInteraction.Ignore
+            );
+    }
+
+    // =========================================================
+    // EVENTOS DO INPUT SYSTEM
+    // =========================================================
+
+    /*
+     * Esses métodos continuam existindo caso
+     * algum objeto antigo ainda esteja conectado
+     * via Invoke Unity Events.
+     */
+
+    public void OnMove(
+        InputAction.CallbackContext context
+    )
+    {
+        moveInput =
+            context.ReadValue<Vector2>();
+    }
+
+    public void OnJump(
+        InputAction.CallbackContext context
+    )
+    {
+        if (!context.performed)
+        {
+            return;
+        }
+
+        Jump();
+    }
+
+    // =========================================================
+    // PUSH ANTIGO
+    // =========================================================
+
+    public void OnPush(
+        InputAction.CallbackContext context
+    )
+    {
+        // Não utilizado nesta atividade.
+    }
+
+    // =========================================================
+    // CONFIGURAÇÃO ANTIGA
     // =========================================================
 
     public void Configure(
@@ -252,102 +410,164 @@ public class TwoBallController : MonoBehaviour
         float maxPush
     )
     {
-        moveSpeed = speed;
-
-        basePushForce =
-            Mathf.Clamp(
-                push / 150f,
-                2f,
-                5f
-            );
-
-        maxPushForce =
-            Mathf.Clamp(
-                maxPush / 200f,
-                5f,
-                9f
-            );
+        moveSpeed =
+            speed;
     }
 
     // =========================================================
-    // SAVE / LOAD
+    // SAVE
     // =========================================================
-
-    [Header("Save")]
-    [SerializeField]
-    private int saveSlot = 0;
 
     public void SaveCurrentProgress()
     {
-        if (SaveManager.Instance == null)
+        if (
+            SaveManager.Instance == null
+        )
         {
-            Debug.LogWarning("SaveManager not found. Cannot save.");
+            Debug.LogWarning(
+                "SaveManager não encontrado."
+            );
+
             return;
         }
 
-        var save = new SaveData();
-        save.sceneName = SceneManager.GetActiveScene().name;
-        save.playerPosition = transform.position;
+        SaveData save =
+            new SaveData();
 
-        var hud = FindObjectOfType<HUDController>();
+        save.sceneName =
+            SceneManager
+                .GetActiveScene()
+                .name;
+
+        save.playerPosition =
+            transform.position;
+
+        HUDController hud =
+            FindFirstObjectByType<HUDController>();
+
         if (hud != null)
-            save.coins = hud.Coins;
-
-        var level = FindObjectOfType<LevelManager>();
-        if (level != null)
         {
-            // If LevelManager exposes a CurrentLevel property, use it; otherwise skip
-            var prop = level.GetType().GetProperty("CurrentLevel");
-            if (prop != null)
-            {
-                var val = prop.GetValue(level);
-                if (val is int intVal) save.levelIndex = intVal;
-            }
+            save.coins =
+                hud.Coins;
         }
 
-        SaveManager.Instance.SaveToSlot(saveSlot, save);
-        Debug.Log($"Saved progress to slot {saveSlot}");
+        SaveManager.Instance.SaveToSlot(
+            saveSlot,
+            save
+        );
+
+        Debug.Log(
+            "Progresso salvo no slot "
+            + saveSlot
+        );
     }
 
-    public void LoadProgress(int slot = -1)
+    // =========================================================
+    // LOAD
+    // =========================================================
+
+    public void LoadProgress(
+        int slot = -1
+    )
     {
-        if (SaveManager.Instance == null)
+        if (
+            SaveManager.Instance == null
+        )
         {
-            Debug.LogWarning("SaveManager not found. Cannot load.");
             return;
         }
 
-        int useSlot = slot < 0 ? saveSlot : slot;
-        var data = SaveManager.Instance.LoadFromSlot(useSlot);
+        int slotToUse =
+            slot < 0
+                ? saveSlot
+                : slot;
+
+        SaveData data =
+            SaveManager.Instance.LoadFromSlot(
+                slotToUse
+            );
 
         if (data == null)
         {
-            Debug.Log($"No save found in slot {useSlot}");
             return;
         }
 
-        // If the save points to a different scene, load it first
-        if (!string.IsNullOrEmpty(data.sceneName) && data.sceneName != SceneManager.GetActiveScene().name)
+        // Se estiver em outra cena
+        if (
+            !string.IsNullOrEmpty(
+                data.sceneName
+            )
+            &&
+            data.sceneName
+            != SceneManager
+                .GetActiveScene()
+                .name
+        )
         {
-            // load scene and then apply position via a coroutine on GameManager or other loader
-            GameManager.Instance.ForceSceneChange(data.sceneName);
-            // Note: positional restore after scene load requires a small delay — handled by LevelManager or a loader hook
-            Debug.Log($"Requested scene change to {data.sceneName} for loading save slot {useSlot}");
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance
+                    .ForceSceneChange(
+                        data.sceneName
+                    );
+            }
+
             return;
         }
 
-        // apply position and coins
-        transform.position = data.playerPosition;
+        // Para a física antes de mover
+        rb.linearVelocity =
+            Vector3.zero;
 
-        var hud2 = FindObjectOfType<HUDController>();
-        if (hud2 != null)
-            hud2.SetCoins(data.coins);
+        rb.angularVelocity =
+            Vector3.zero;
 
-        Debug.Log($"Loaded save from slot {useSlot}");
+        rb.position =
+            data.playerPosition;
+
+        HUDController hud =
+            FindFirstObjectByType<HUDController>();
+
+        if (hud != null)
+        {
+            hud.SetCoins(
+                data.coins
+            );
+        }
     }
+
+    // =========================================================
+    // SAIR DO JOGO
+    // =========================================================
 
     private void OnApplicationQuit()
     {
         SaveCurrentProgress();
+    }
+
+    // =========================================================
+    // DEBUG DO CHÃO
+    // =========================================================
+
+    private void OnDrawGizmosSelected()
+    {
+        Collider col =
+            GetComponent<Collider>();
+
+        if (col == null)
+        {
+            return;
+        }
+
+        float distance =
+            col.bounds.extents.y
+            + groundCheckExtraDistance;
+
+        Gizmos.DrawLine(
+            transform.position,
+            transform.position
+            + Vector3.down
+            * distance
+        );
     }
 }
