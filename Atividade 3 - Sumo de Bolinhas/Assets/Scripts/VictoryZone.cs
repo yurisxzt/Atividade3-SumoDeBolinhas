@@ -1,35 +1,44 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class VictoryZone : MonoBehaviour
 {
-    // supports both 2D and 3D triggers
-    void OnTriggerEnter2D(Collider2D other)
+    public string nextLevelSceneName = "Fase2";
+
+    private void OnTriggerEnter2D(Collider2D other)
     {
         HandleTrigger(other.gameObject);
     }
 
-    void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
         HandleTrigger(other.gameObject);
     }
 
     private void HandleTrigger(GameObject obj)
     {
-        if (!obj.CompareTag("Player"))
+        if (obj == null)
+        {
             return;
+        }
 
-        // ask player to save, then move to victory scene
         var player = obj.GetComponent<TwoBallController>();
-        if (player != null)
-            player.SaveCurrentProgress();
+        if (player == null)
+        {
+            return;
+        }
 
-        // notify level manager if present
-        var lm = FindObjectOfType<LevelManager>();
+        player.SaveCurrentProgress();
+
+        var lm = FindFirstObjectByType<LevelManager>();
         if (lm != null)
+        {
             lm.OnVictory();
+            return;
+        }
 
-        // transition to final victory scene
-        GameManager.Instance.ForceSceneChange("VictoryFinal");
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.ForceSceneChange(nextLevelSceneName);
+        }
     }
 }

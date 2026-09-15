@@ -2,6 +2,10 @@ using UnityEngine;
 
 public class CoinSpawner : MonoBehaviour
 {
+    [Header("Spawn manual de moedas")]
+    [SerializeField]
+    private bool allowRandomSpawning = false;
+
     [SerializeField]
     private GameObject coinPrefab;
 
@@ -18,34 +22,39 @@ public class CoinSpawner : MonoBehaviour
 
     private void Update()
     {
+        if (!allowRandomSpawning)
+        {
+            return;
+        }
+
         timer += Time.deltaTime;
 
-        if(timer >= spawnInterval)
+        if (timer >= spawnInterval)
         {
             timer = 0f;
-
             SpawnCoin();
         }
     }
 
-    void SpawnCoin()
+    private void SpawnCoin()
     {
-        Coin[] coins =
-            FindObjectsByType<Coin>(
-                FindObjectsSortMode.None);
-
-        if(coins.Length >= maxCoins)
+        if (coinPrefab == null)
+        {
             return;
+        }
 
-        Vector3 position =
-            new Vector3(
-                Random.Range(-arenaRadius, arenaRadius),
-                0.5f,
-                Random.Range(-arenaRadius, arenaRadius));
+        Coin[] coins = FindObjectsByType<Coin>(FindObjectsSortMode.None);
 
-        Instantiate(
-            coinPrefab,
-            position,
-            Quaternion.identity);
+        if (coins.Length >= maxCoins)
+        {
+            return;
+        }
+
+        Vector3 position = new Vector3(
+            Random.Range(-arenaRadius, arenaRadius),
+            0.5f,
+            Random.Range(-arenaRadius, arenaRadius));
+
+        Instantiate(coinPrefab, position, Quaternion.identity);
     }
 }

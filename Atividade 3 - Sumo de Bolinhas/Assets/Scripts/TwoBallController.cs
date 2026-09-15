@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -36,6 +37,12 @@ public class TwoBallController : MonoBehaviour
     [Header("Save")]
     [SerializeField]
     private int saveSlot = 0;
+
+    [Header("Respawn")]
+    [SerializeField]
+    private Transform startPoint;
+
+    private Vector3 initialSpawnPoint;
 
     // =========================================================
     // COMPONENTES
@@ -84,6 +91,17 @@ public class TwoBallController : MonoBehaviour
 
     private void Awake()
     {
+        initialSpawnPoint = transform.position;
+
+        if (startPoint == null)
+        {
+            startPoint = GameObject.Find("StartPoint")?.transform;
+            if (startPoint == null)
+            {
+                startPoint = GameObject.Find("SpawnPoint")?.transform;
+            }
+        }
+
         rb =
             GetComponent<Rigidbody>();
 
@@ -420,120 +438,164 @@ public class TwoBallController : MonoBehaviour
 
     public void SaveCurrentProgress()
     {
-        if (
-            SaveManager.Instance == null
-        )
+        if (SaveManager.Instance == null)
         {
-            Debug.LogWarning(
-                "SaveManager não encontrado."
-            );
-
+            Debug.LogWarning("SaveManager não encontrado.");
             return;
         }
 
-        SaveData save =
-            new SaveData();
+        SaveData existingSave = SaveManager.Instance.LoadFromSlot(0);
 
-        save.sceneName =
-            SceneManager
-                .GetActiveScene()
-                .name;
-
-        save.playerPosition =
-            transform.position;
-
-        HUDController hud =
-            FindFirstObjectByType<HUDController>();
-
-        if (hud != null)
+        HUDController hud = FindFirstObjectByType<HUDController>();
+        SaveData save = new SaveData
         {
-            save.coins =
-                hud.Coins;
+            sceneName = SceneManager.GetActiveScene().name,
+            playerPosition = transform.position,
+            checkpointPosition = existingSave != null && existingSave.checkpointPassed ? existingSave.checkpointPosition : transform.position,
+            checkpointPassed = existingSave != null && existingSave.checkpointPassed,
+            activeCheckpointId = existingSave != null ? existingSave.activeCheckpointId : "",
+            coins = hud != null ? hud.Coins : 0,
+            collectedCoinIds = new List<string>(SaveManager.Instance.CurrentCollectedCoins)
+        };
+
+        SaveManager.Instance.SaveToSlot(0, save);
+
+        if (saveSlot != 0)
+        {
+            SaveManager.Instance.SaveToSlot(saveSlot, save);
         }
 
-        SaveManager.Instance.SaveToSlot(
-            saveSlot,
-            save
-        );
+        Debug.Log("Progresso salvo no autosave e slot " + saveSlot);
+    }
 
-        Debug.Log(
-            "Progresso salvo no slot "
-            + saveSlot
-        );
+    public void SaveCheckpointProgress(string checkpointId, Vector3 checkpointPosition)
+    {
+        if (SaveManager.Instance == null)
+        {
+            return;
+        }
+
+        HUDController hud = FindFirstObjectByType<HUDController>();
+        SaveData save = new SaveData
+        {
+            sceneName = SceneManager.GetActiveScene().name,
+            playerPosition = checkpointPosition,
+            checkpointPosition = checkpointPosition,
+            checkpointPassed = true,
+            activeCheckpointId = checkpointId,
+            coins = hud != null ? hud.Coins : 0,
+            collectedCoinIds = new List<string>(SaveManager.Instance.CurrentCollectedCoins)
+        };
+
+        SaveManager.Instance.SaveToSlot(0, save);
     }
 
     // =========================================================
     // LOAD
     // =========================================================
 
-    public void LoadProgress(
-        int slot = -1
-    )
+    public void LoadProgress(int slot = -1)
     {
-        if (
-            SaveManager.Instance == null
-        )
+        if (SaveManager.Instance == null)
         {
             return;
         }
 
-        int slotToUse =
-            slot < 0
-                ? saveSlot
-                : slot;
-
-        SaveData data =
-            SaveManager.Instance.LoadFromSlot(
-                slotToUse
-            );
+        int slotToUse = slot < 0 ? saveSlot : slot;
+        SaveData data = SaveManager.Instance.LoadFromSlot(slotToUse);
 
         if (data == null)
         {
             return;
         }
 
-        // Se estiver em outra cena
-        if (
-            !string.IsNullOrEmpty(
-                data.sceneName
-            )
-            &&
-            data.sceneName
-            != SceneManager
-                .GetActiveScene()
-                .name
-        )
+        if (!string.IsNullOrEmpty(data.sceneName) && data.sceneName != SceneManager.GetActiveScene().name)
         {
             if (GameManager.Instance != null)
             {
-                GameManager.Instance
-                    .ForceSceneChange(
-                        data.sceneName
-                    );
+                GameManager.Instance.ForceSceneChange(data.sceneName);
             }
 
             return;
         }
 
-        // Para a física antes de mover
-        rb.linearVelocity =
-            Vector3.zero;
+        ApplyLoadedData(data);
+    }
 
-        rb.angularVelocity =
-            Vector3.zero;
+    public void ApplyLoadedData(SaveData data)
+    {
+        if (data == null)
+        {
+            return;
+        }
 
-        rb.position =
-            data.playerPosition;
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
 
-        HUDController hud =
-            FindFirstObjectByType<HUDController>();
+        Vector3 spawnPosition = data.checkpointPassed ? data.checkpointPosition : data.playerPosition;
+        rb.position = spawnPosition;
+        transform.position = spawnPosition;
 
+        if (SaveManager.Instance != null)
+        {
+            SaveManager.Instance.SetCurrentCollectedCoins(data.collectedCoinIds);
+        }
+
+        HUDController hud = FindFirstObjectByType<HUDController>();
         if (hud != null)
         {
-            hud.SetCoins(
-                data.coins
-            );
+            hud.SetCoins(data.coins);
         }
+
+        PlayerStats playerStats = GetComponent<PlayerStats>();
+        if (playerStats != null)
+        {
+            playerStats.SetCoins(data.coins);
+        }
+
+        foreach (Coin coin in FindObjectsByType<Coin>(FindObjectsSortMode.None))
+        {
+            if (coin == null)
+            {
+                continue;
+            }
+
+            bool coinAlreadyCollected = SaveManager.Instance != null && SaveManager.Instance.IsCoinCollected(coin.CoinId);
+            coin.gameObject.SetActive(!coinAlreadyCollected);
+        }
+    }
+
+    public Vector3 GetRespawnPosition()
+    {
+        if (SaveManager.Instance != null)
+        {
+            SaveData data = SaveManager.Instance.LoadFromSlot(0);
+            if (data != null && data.checkpointPassed && data.sceneName == SceneManager.GetActiveScene().name)
+            {
+                return data.checkpointPosition;
+            }
+        }
+
+        if (startPoint != null)
+        {
+            return startPoint.position;
+        }
+
+        return initialSpawnPoint;
+    }
+
+    public void RespawnToCheckpointOrStart()
+    {
+        Vector3 respawnPosition = GetRespawnPosition();
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.position = respawnPosition;
+        }
+
+        transform.position = respawnPosition;
     }
 
     // =========================================================

@@ -1,14 +1,14 @@
 ﻿using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Simple UI controller for the main menu. Attach to a GameObject in the MenuPrincipal scene
-/// and wire the OnStartClicked and OnQuitClicked methods to the respective UI buttons.
+/// Controla o menu principal do jogo com início, carregar, continuar e sair.
 /// </summary>
 public class MenuUiController : MonoBehaviour
 {
     [Header("Scenes")]
-    public string firstLevelScene = "SampleScene";
-    public string saveSlotScene = "SavingSlotSelection";
+    public string firstLevelScene = "Fase1";
+    public string saveSlotScene = "Menu Inicial";
 
     [Header("UI")]
     public GameObject continueButton;
@@ -25,7 +25,11 @@ public class MenuUiController : MonoBehaviour
 
     public void UpdateContinueButton()
     {
-        if (continueButton == null) return;
+        if (continueButton == null)
+        {
+            return;
+        }
+
         bool hasAuto = SaveManager.Instance != null && SaveManager.Instance.SlotExists(0);
         continueButton.SetActive(hasAuto);
     }
@@ -35,22 +39,36 @@ public class MenuUiController : MonoBehaviour
         if (GameManager.Instance != null)
         {
             GameManager.Instance.ForceSceneChange(firstLevelScene);
+            return;
         }
+
+        SceneManager.LoadScene(firstLevelScene);
     }
 
     public void OnContinueClicked()
     {
-        // load from autosave slot 0
         if (SaveRestoreManager.Instance != null)
         {
             SaveRestoreManager.Instance.RequestLoadSlot(0);
+            return;
         }
-        else if (SaveManager.Instance != null && SaveManager.Instance.SlotExists(0))
+
+        if (SaveManager.Instance != null && SaveManager.Instance.SlotExists(0))
         {
-            var data = SaveManager.Instance.LoadFromSlot(0);
-            if (data != null && GameManager.Instance != null)
+            SaveData data = SaveManager.Instance.LoadFromSlot(0);
+            if (data != null)
             {
-                GameManager.Instance.ForceSceneChange(data.sceneName);
+                if (!string.IsNullOrEmpty(data.sceneName))
+                {
+                    if (GameManager.Instance != null)
+                    {
+                        GameManager.Instance.ForceSceneChange(data.sceneName);
+                    }
+                    else
+                    {
+                        SceneManager.LoadScene(data.sceneName);
+                    }
+                }
             }
         }
     }
@@ -59,8 +77,11 @@ public class MenuUiController : MonoBehaviour
     {
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.RequestSceneChange(saveSlotScene);
+            GameManager.Instance.ForceSceneChange(saveSlotScene);
+            return;
         }
+
+        SceneManager.LoadScene(saveSlotScene);
     }
 
     public void OnQuitClicked()

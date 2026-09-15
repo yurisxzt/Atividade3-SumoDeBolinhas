@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -21,16 +22,6 @@ public class SaveRestoreManager : MonoBehaviour
         }
     }
 
-    private void OnEnable()
-    {
-        SceneManager.sceneLoaded += OnSceneLoaded;
-    }
-
-    private void OnDisable()
-    {
-        SceneManager.sceneLoaded -= OnSceneLoaded;
-    }
-
     public void RequestLoadSlot(int slot)
     {
         if (SaveManager.Instance == null)
@@ -39,7 +30,7 @@ public class SaveRestoreManager : MonoBehaviour
             return;
         }
 
-        var data = SaveManager.Instance.LoadFromSlot(slot);
+        SaveData data = SaveManager.Instance.LoadFromSlot(slot);
         if (data == null)
         {
             Debug.LogWarning($"No save in slot {slot}");
@@ -49,36 +40,69 @@ public class SaveRestoreManager : MonoBehaviour
         pendingSave = data;
         pendingSlot = slot;
 
-        // If save points to a scene, load it
-        if (!string.IsNullOrEmpty(data.sceneName))
+        if (!string.IsNullOrEmpty(data.sceneName) && data.sceneName != SceneManager.GetActiveScene().name)
         {
-            GameManager.Instance.ForceSceneChange(data.sceneName);
+            StartCoroutine(LoadSceneAndApplySave(data.sceneName));
+        }
+        else
+        {
+            ApplySaveToCurrentScene(data);
         }
     }
 
-    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    private IEnumerator LoadSceneAndApplySave(string sceneName)
     {
-        if (pendingSave == null) return;
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.ForceSceneChange(sceneName);
+            yield return new WaitForSeconds(0.1f);
+        }
+        else
+        {
+            yield return SceneManager.LoadSceneAsync(sceneName);
+        }
 
-        // If pending save scene specified and doesn't match current, wait
-        if (!string.IsNullOrEmpty(pendingSave.sceneName) && pendingSave.sceneName != scene.name) return;
+        ApplySaveToCurrentScene(pendingSave);
+        if (SaveManager.Instance != null)
+        {
+            SaveManager.Instance.SaveToSlot(0, pendingSave);
+        }
+    }
 
-        // Apply to player and HUD
+    private void ApplySaveToCurrentScene(SaveData data)
+    {
+        if (data == null)
+        {
+            return;
+        }
+
+        if (SaveManager.Instance != null)
+        {
+            SaveManager.Instance.SetCurrentCollectedCoins(data.collectedCoinIds);
+        }
+
         var player = FindObjectOfType<TwoBallController>();
         if (player != null)
         {
-            player.transform.position = pendingSave.playerPosition;
+            player.ApplyLoadedData(data);
         }
 
         var hud = FindObjectOfType<HUDController>();
         if (hud != null)
         {
-            hud.SetCoins(pendingSave.coins);
+            hud.SetCoins(data.coins);
         }
 
-        Debug.Log($"Applied pending save from slot {pendingSlot} after scene load {scene.name}");
+        foreach (Coin coin in FindObjectsByType<Coin>(FindObjectsSortMode.None))
+        {
+            if (coin == null)
+            {
+                continue;
+            }
 
-        // clear
+            coin.gameObject.SetActive(!SaveManager.Instance.IsCoinCollected(coin.CoinId));
+        }
+
         pendingSave = null;
         pendingSlot = -1;
     }
