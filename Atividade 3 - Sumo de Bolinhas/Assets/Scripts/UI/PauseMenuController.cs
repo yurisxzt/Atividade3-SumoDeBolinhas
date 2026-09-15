@@ -138,7 +138,7 @@ public class PauseMenuController : MonoBehaviour
             labelObject.transform.SetParent(slotObject.transform, false);
             Text text = labelObject.AddComponent<Text>();
             text.alignment = TextAnchor.MiddleCenter;
-            text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.color = Color.white;
             text.resizeTextForBestFit = true;
             text.resizeTextMinSize = 12;
@@ -175,7 +175,7 @@ public class PauseMenuController : MonoBehaviour
             labelObject.transform.SetParent(slotObject.transform, false);
             textComponent = labelObject.AddComponent<Text>();
             textComponent.alignment = TextAnchor.MiddleCenter;
-            textComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            textComponent.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             textComponent.color = Color.white;
         }
 
