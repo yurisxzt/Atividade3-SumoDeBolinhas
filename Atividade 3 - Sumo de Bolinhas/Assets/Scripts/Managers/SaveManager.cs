@@ -8,58 +8,178 @@ using UnityEngine.SceneManagement;
 
 public class SaveManager : MonoBehaviour
 {
-    private const int SlotCount = 3;
-    private const string KeyString = "12345678901234567890123456789012";
-    private const string IvString = "1234567890123456";
+    // =========================================================
+    // SLOTS
+    // =========================================================
 
-    public static SaveManager Instance { get; private set; }
+    public const int AutosaveSlot = 0;
 
-    private readonly List<string> currentCollectedCoins = new List<string>();
+    public const int FirstManualSlot = 1;
 
-    public IReadOnlyCollection<string> CurrentCollectedCoins => currentCollectedCoins;
+    public const int LastManualSlot = 3;
+
+    private const int SlotCount = 4;
+
+    // =========================================================
+    // ENCRIPTAÇÃO
+    // =========================================================
+
+    private const string KeyString =
+        "12345678901234567890123456789012";
+
+    private const string IvString =
+        "1234567890123456";
+
+    // =========================================================
+    // SINGLETON
+    // =========================================================
+
+    public static SaveManager Instance
+    {
+        get;
+        private set;
+    }
+
+    // =========================================================
+    // MOEDAS DA PARTIDA ATUAL
+    // =========================================================
+
+    private readonly List<string>
+        currentCollectedCoins =
+            new List<string>();
+
+    public IReadOnlyCollection<string>
+        CurrentCollectedCoins =>
+            currentCollectedCoins;
+
+    // =========================================================
+    // AWAKE
+    // =========================================================
 
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+
+            DontDestroyOnLoad(
+                gameObject
+            );
         }
         else
         {
-            Destroy(gameObject);
+            Destroy(
+                gameObject
+            );
         }
     }
 
-    public string GetPath(int slot)
+    // =========================================================
+    // CAMINHO DO SAVE
+    // =========================================================
+
+    public string GetPath(
+        int slot
+    )
     {
-        if (slot < 0 || slot >= SlotCount)
+        if (!IsValidSlot(slot))
         {
-            slot = 0;
+            slot = AutosaveSlot;
         }
 
-        return Path.Combine(Application.persistentDataPath, $"sumo_save_slot_{slot}.sav");
+        return Path.Combine(
+            Application.persistentDataPath,
+            "platform_save_slot_"
+            + slot
+            + ".sav"
+        );
     }
 
-    public bool SlotExists(int slot)
+    // =========================================================
+    // VERIFICAR SLOT
+    // =========================================================
+
+    private bool IsValidSlot(
+        int slot
+    )
     {
-        return File.Exists(GetPath(slot));
+        return slot >= 0 &&
+               slot < SlotCount;
     }
 
-    public void MarkCoinCollected(string coinId)
+    public bool SlotExists(
+        int slot
+    )
     {
-        if (string.IsNullOrWhiteSpace(coinId))
+        if (!IsValidSlot(slot))
+        {
+            return false;
+        }
+
+        return File.Exists(
+            GetPath(slot)
+        );
+    }
+
+    // =========================================================
+    // APAGAR SLOT
+    // =========================================================
+
+    public void DeleteSlot(
+        int slot
+    )
+    {
+        if (!IsValidSlot(slot))
         {
             return;
         }
 
-        if (!currentCollectedCoins.Contains(coinId))
+        string path =
+            GetPath(slot);
+
+        if (File.Exists(path))
         {
-            currentCollectedCoins.Add(coinId);
+            File.Delete(path);
+        }
+
+        if (slot == AutosaveSlot)
+        {
+            ClearCollectedCoins();
         }
     }
 
-    public void SetCurrentCollectedCoins(IEnumerable<string> collectedIds)
+    // =========================================================
+    // MOEDAS
+    // =========================================================
+
+    public void MarkCoinCollected(
+        string coinId
+    )
+    {
+        if (
+            string.IsNullOrWhiteSpace(
+                coinId
+            )
+        )
+        {
+            return;
+        }
+
+        if (
+            !currentCollectedCoins.Contains(
+                coinId
+            )
+        )
+        {
+            currentCollectedCoins.Add(
+                coinId
+            );
+        }
+    }
+
+    public void SetCurrentCollectedCoins(
+        IEnumerable<string> collectedIds
+    )
     {
         currentCollectedCoins.Clear();
 
@@ -68,11 +188,29 @@ public class SaveManager : MonoBehaviour
             return;
         }
 
-        foreach (string id in collectedIds)
+        foreach (
+            string id
+            in collectedIds
+        )
         {
-            if (!string.IsNullOrWhiteSpace(id) && !currentCollectedCoins.Contains(id))
+            if (
+                string.IsNullOrWhiteSpace(
+                    id
+                )
+            )
             {
-                currentCollectedCoins.Add(id);
+                continue;
+            }
+
+            if (
+                !currentCollectedCoins.Contains(
+                    id
+                )
+            )
+            {
+                currentCollectedCoins.Add(
+                    id
+                );
             }
         }
     }
@@ -82,68 +220,143 @@ public class SaveManager : MonoBehaviour
         currentCollectedCoins.Clear();
     }
 
-    public bool IsCoinCollected(string coinId)
+    // =========================================================
+    // VERIFICAR MOEDA
+    // =========================================================
+
+    /*
+     * IMPORTANTE:
+     *
+     * Agora verificamos SOMENTE o estado atual.
+     *
+     * Não procuramos mais em todos os slots,
+     * pois isso fazia moedas de um save
+     * desaparecerem em outro.
+     */
+
+    public bool IsCoinCollected(
+        string coinId
+    )
     {
-        if (string.IsNullOrWhiteSpace(coinId))
+        if (
+            string.IsNullOrWhiteSpace(
+                coinId
+            )
+        )
         {
             return false;
         }
 
-        if (currentCollectedCoins.Contains(coinId))
-        {
-            return true;
-        }
-
-        for (int i = 0; i < SlotCount; i++)
-        {
-            SaveData data = LoadFromSlot(i);
-            if (data != null && data.collectedCoinIds != null && data.collectedCoinIds.Contains(coinId))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return currentCollectedCoins.Contains(
+            coinId
+        );
     }
 
-    public void SaveToSlot(int slot, SaveData data)
+    // =========================================================
+    // SALVAR
+    // =========================================================
+
+    public void SaveToSlot(
+        int slot,
+        SaveData data
+    )
     {
-        if (slot < 0 || slot >= SlotCount)
+        if (!IsValidSlot(slot))
         {
-            slot = 0;
+            Debug.LogWarning(
+                "SaveManager: slot inválido: "
+                + slot
+            );
+
+            return;
         }
 
-        SaveData save = data ?? new SaveData();
-        save.sceneName = string.IsNullOrEmpty(save.sceneName) ? SceneManager.GetActiveScene().name : save.sceneName;
-        save.collectedCoinIds ??= new List<string>();
-        save.collectedCoinIds = NormalizeIds(save.collectedCoinIds);
+        SaveData save =
+            data != null
+                ? data.Clone()
+                : new SaveData();
 
-        string json = JsonUtility.ToJson(save);
-        string encrypted = EncryptString(json);
-        File.WriteAllText(GetPath(slot), encrypted);
-
-        if (slot != 0)
+        if (
+            string.IsNullOrEmpty(
+                save.sceneName
+            )
+        )
         {
-            File.WriteAllText(GetPath(0), encrypted);
+            save.sceneName =
+                SceneManager
+                    .GetActiveScene()
+                    .name;
         }
 
-        currentCollectedCoins.Clear();
-        foreach (string id in save.collectedCoinIds)
+        if (save.collectedCoinIds == null)
         {
-            currentCollectedCoins.Add(id);
+            save.collectedCoinIds =
+                new List<string>();
         }
 
-        Debug.Log($"SaveManager: slot {slot} salvo em {GetPath(slot)}");
+        save.collectedCoinIds =
+            NormalizeIds(
+                save.collectedCoinIds
+            );
+
+        string json =
+            JsonUtility.ToJson(
+                save
+            );
+
+        string encrypted =
+            EncryptString(
+                json
+            );
+
+        File.WriteAllText(
+            GetPath(slot),
+            encrypted
+        );
+
+        // =====================================================
+        // SAVE MANUAL TAMBÉM COPIA PARA AUTOSAVE
+        // =====================================================
+
+        if (slot != AutosaveSlot)
+        {
+            File.WriteAllText(
+                GetPath(AutosaveSlot),
+                encrypted
+            );
+        }
+
+        Debug.Log(
+            "SaveManager: slot "
+            + slot
+            + " salvo."
+        );
     }
 
-    public SaveData LoadFromSlot(int slot)
+    // =========================================================
+    // CARREGAR
+    // =========================================================
+
+    /*
+     * Esse método SOMENTE lê o arquivo.
+     *
+     * Ele não altera o estado das moedas.
+     * Isso evita que simplesmente abrir
+     * o menu de slots modifique o jogo.
+     */
+
+    public SaveData LoadFromSlot(
+        int slot
+    )
     {
-        if (slot < 0 || slot >= SlotCount)
+        if (!IsValidSlot(slot))
         {
             return null;
         }
 
-        string path = GetPath(slot);
+        string path =
+            GetPath(slot);
+
         if (!File.Exists(path))
         {
             return null;
@@ -151,9 +364,20 @@ public class SaveManager : MonoBehaviour
 
         try
         {
-            string encrypted = File.ReadAllText(path);
-            string json = DecryptString(encrypted);
-            SaveData data = JsonUtility.FromJson<SaveData>(json);
+            string encrypted =
+                File.ReadAllText(
+                    path
+                );
+
+            string json =
+                DecryptString(
+                    encrypted
+                );
+
+            SaveData data =
+                JsonUtility.FromJson<SaveData>(
+                    json
+                );
 
             if (data == null)
             {
@@ -162,85 +386,208 @@ public class SaveManager : MonoBehaviour
 
             if (data.collectedCoinIds == null)
             {
-                data.collectedCoinIds = new List<string>();
+                data.collectedCoinIds =
+                    new List<string>();
             }
 
-            SetCurrentCollectedCoins(data.collectedCoinIds);
             return data;
         }
         catch (Exception ex)
         {
-            Debug.LogWarning($"SaveManager: falha ao carregar slot {slot}. {ex.Message}");
+            Debug.LogWarning(
+                "SaveManager: falha ao carregar slot "
+                + slot
+                + ". "
+                + ex.Message
+            );
+
             return null;
         }
     }
 
-    public void CopySlotToAutosave(int slot)
+    // =========================================================
+    // COPIAR SLOT PARA AUTOSAVE
+    // =========================================================
+
+    public void CopySlotToAutosave(
+        int slot
+    )
     {
-        SaveData data = LoadFromSlot(slot);
-        if (data != null)
+        if (
+            slot == AutosaveSlot ||
+            !SlotExists(slot)
+        )
         {
-            SaveToSlot(0, data);
+            return;
         }
+
+        File.Copy(
+            GetPath(slot),
+            GetPath(AutosaveSlot),
+            true
+        );
+
+        Debug.Log(
+            "SaveManager: slot "
+            + slot
+            + " copiado para o autosave."
+        );
     }
 
-    private static List<string> NormalizeIds(IEnumerable<string> ids)
+    // =========================================================
+    // NORMALIZAR IDS
+    // =========================================================
+
+    private static List<string>
+        NormalizeIds(
+            IEnumerable<string> ids
+        )
     {
-        List<string> normalized = new List<string>();
+        List<string> normalized =
+            new List<string>();
 
         if (ids == null)
         {
             return normalized;
         }
 
-        foreach (string id in ids)
+        foreach (
+            string id
+            in ids
+        )
         {
-            if (string.IsNullOrWhiteSpace(id))
+            if (
+                string.IsNullOrWhiteSpace(
+                    id
+                )
+            )
             {
                 continue;
             }
 
-            if (!normalized.Contains(id))
+            if (
+                !normalized.Contains(
+                    id
+                )
+            )
             {
-                normalized.Add(id);
+                normalized.Add(
+                    id
+                );
             }
         }
 
         return normalized;
     }
 
-    private static string EncryptString(string plainText)
-    {
-        using Aes aes = Aes.Create();
-        aes.Key = Encoding.UTF8.GetBytes(KeyString);
-        aes.IV = Encoding.UTF8.GetBytes(IvString);
-        aes.Mode = CipherMode.CBC;
-        aes.Padding = PaddingMode.PKCS7;
+    // =========================================================
+    // ENCRIPTAR
+    // =========================================================
 
-        using MemoryStream ms = new MemoryStream();
-        using (CryptoStream cs = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write))
+    private static string EncryptString(
+        string plainText
+    )
+    {
+        using Aes aes =
+            Aes.Create();
+
+        aes.Key =
+            Encoding.UTF8.GetBytes(
+                KeyString
+            );
+
+        aes.IV =
+            Encoding.UTF8.GetBytes(
+                IvString
+            );
+
+        aes.Mode =
+            CipherMode.CBC;
+
+        aes.Padding =
+            PaddingMode.PKCS7;
+
+        using MemoryStream ms =
+            new MemoryStream();
+
+        using (
+            CryptoStream cs =
+                new CryptoStream(
+                    ms,
+                    aes.CreateEncryptor(),
+                    CryptoStreamMode.Write
+                )
+        )
         {
-            byte[] bytes = Encoding.UTF8.GetBytes(plainText);
-            cs.Write(bytes, 0, bytes.Length);
+            byte[] bytes =
+                Encoding.UTF8.GetBytes(
+                    plainText
+                );
+
+            cs.Write(
+                bytes,
+                0,
+                bytes.Length
+            );
+
             cs.FlushFinalBlock();
         }
 
-        return Convert.ToBase64String(ms.ToArray());
+        return Convert.ToBase64String(
+            ms.ToArray()
+        );
     }
 
-    private static string DecryptString(string encryptedText)
+    // =========================================================
+    // DECRIPTAR
+    // =========================================================
+
+    private static string DecryptString(
+        string encryptedText
+    )
     {
-        byte[] bytes = Convert.FromBase64String(encryptedText);
+        byte[] bytes =
+            Convert.FromBase64String(
+                encryptedText
+            );
 
-        using Aes aes = Aes.Create();
-        aes.Key = Encoding.UTF8.GetBytes(KeyString);
-        aes.IV = Encoding.UTF8.GetBytes(IvString);
-        aes.Mode = CipherMode.CBC;
-        aes.Padding = PaddingMode.PKCS7;
+        using Aes aes =
+            Aes.Create();
 
-        using MemoryStream ms = new MemoryStream(bytes);
-        using CryptoStream cs = new CryptoStream(ms, aes.CreateDecryptor(), CryptoStreamMode.Read);
-        using StreamReader sr = new StreamReader(cs, Encoding.UTF8);
+        aes.Key =
+            Encoding.UTF8.GetBytes(
+                KeyString
+            );
+
+        aes.IV =
+            Encoding.UTF8.GetBytes(
+                IvString
+            );
+
+        aes.Mode =
+            CipherMode.CBC;
+
+        aes.Padding =
+            PaddingMode.PKCS7;
+
+        using MemoryStream ms =
+            new MemoryStream(
+                bytes
+            );
+
+        using CryptoStream cs =
+            new CryptoStream(
+                ms,
+                aes.CreateDecryptor(),
+                CryptoStreamMode.Read
+            );
+
+        using StreamReader sr =
+            new StreamReader(
+                cs,
+                Encoding.UTF8
+            );
+
         return sr.ReadToEnd();
     }
 }

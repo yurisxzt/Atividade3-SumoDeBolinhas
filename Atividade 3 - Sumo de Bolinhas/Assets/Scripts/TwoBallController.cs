@@ -31,12 +31,8 @@ public class TwoBallController : MonoBehaviour
     private float groundCheckExtraDistance = 0.15f;
 
     // =========================================================
-    // SAVE
+    // RESPAWN
     // =========================================================
-
-    [Header("Save")]
-    [SerializeField]
-    private int saveSlot = 0;
 
     [Header("Respawn")]
     [SerializeField]
@@ -57,7 +53,7 @@ public class TwoBallController : MonoBehaviour
     private Collider playerCollider;
 
     // =========================================================
-    // INPUT ACTIONS
+    // INPUT
     // =========================================================
 
     private InputAction moveAction;
@@ -76,7 +72,7 @@ public class TwoBallController : MonoBehaviour
         isGrounded;
 
     // =========================================================
-    // COMPATIBILIDADE COM SCRIPTS ANTIGOS DO SUMÔ
+    // COMPATIBILIDADE COM O SUMÔ
     // =========================================================
 
     public bool CanPush =>
@@ -91,14 +87,28 @@ public class TwoBallController : MonoBehaviour
 
     private void Awake()
     {
-        initialSpawnPoint = transform.position;
+        initialSpawnPoint =
+            transform.position;
 
         if (startPoint == null)
         {
-            startPoint = GameObject.Find("StartPoint")?.transform;
-            if (startPoint == null)
+            GameObject startObject =
+                GameObject.Find(
+                    "StartPoint"
+                );
+
+            if (startObject == null)
             {
-                startPoint = GameObject.Find("SpawnPoint")?.transform;
+                startObject =
+                    GameObject.Find(
+                        "SpawnPoint"
+                    );
+            }
+
+            if (startObject != null)
+            {
+                startPoint =
+                    startObject.transform;
             }
         }
 
@@ -114,83 +124,96 @@ public class TwoBallController : MonoBehaviour
         playerCollider =
             GetComponent<Collider>();
 
-        // Física da bolinha
-        rb.useGravity = true;
+        rb.useGravity =
+            true;
 
-        rb.isKinematic = false;
+        rb.isKinematic =
+            false;
 
-        rb.linearDamping = 0.8f;
+        rb.linearDamping =
+            0.8f;
 
-        rb.angularDamping = 0.2f;
+        rb.angularDamping =
+            0.2f;
 
-        // =====================================================
-        // INPUT SYSTEM
-        // =====================================================
+        SetupInput();
+    }
 
+    // =========================================================
+    // INPUT SETUP
+    // =========================================================
+
+    private void SetupInput()
+    {
         if (
-            playerInput != null &&
-            playerInput.actions != null
+            playerInput == null ||
+            playerInput.actions == null
         )
         {
-            // Usa especificamente o Action Map "Player"
-            InputActionMap playerMap =
-                playerInput.actions.FindActionMap(
+            return;
+        }
+
+        InputActionMap playerMap =
+            playerInput.actions
+                .FindActionMap(
                     "Player",
                     false
                 );
 
-            if (playerMap != null)
-            {
-                playerMap.Enable();
+        if (playerMap == null)
+        {
+            Debug.LogError(
+                "Action Map 'Player' não encontrado."
+            );
 
-                moveAction =
-                    playerMap.FindAction(
-                        "Move",
-                        false
-                    );
-
-                jumpAction =
-                    playerMap.FindAction(
-                        "Jump",
-                        false
-                    );
-            }
+            return;
         }
 
-        // =====================================================
-        // DEBUG
-        // =====================================================
+        playerMap.Enable();
+
+        moveAction =
+            playerMap.FindAction(
+                "Move",
+                false
+            );
+
+        jumpAction =
+            playerMap.FindAction(
+                "Jump",
+                false
+            );
 
         if (moveAction == null)
         {
             Debug.LogError(
-                "ERRO: ação 'Move' não encontrada no Action Map 'Player'."
+                "Ação 'Move' não encontrada."
             );
         }
 
         if (jumpAction == null)
         {
             Debug.LogError(
-                "ERRO: ação 'Jump' não encontrada no Action Map 'Player'."
+                "Ação 'Jump' não encontrada."
             );
         }
     }
 
     // =========================================================
-    // ON ENABLE
+    // ENABLE / DISABLE
     // =========================================================
 
     private void OnEnable()
     {
-        if (moveAction != null)
-        {
-            moveAction.Enable();
-        }
+        moveAction?.Enable();
 
-        if (jumpAction != null)
-        {
-            jumpAction.Enable();
-        }
+        jumpAction?.Enable();
+    }
+
+    private void OnDisable()
+    {
+        moveAction?.Disable();
+
+        jumpAction?.Disable();
     }
 
     // =========================================================
@@ -206,10 +229,6 @@ public class TwoBallController : MonoBehaviour
         ReadJump();
     }
 
-    // =========================================================
-    // FIXED UPDATE
-    // =========================================================
-
     private void FixedUpdate()
     {
         MovePlayer();
@@ -218,7 +237,7 @@ public class TwoBallController : MonoBehaviour
     }
 
     // =========================================================
-    // INPUT - MOVIMENTO
+    // MOVIMENTO
     // =========================================================
 
     private void ReadMovement()
@@ -235,10 +254,6 @@ public class TwoBallController : MonoBehaviour
             moveAction.ReadValue<Vector2>();
     }
 
-    // =========================================================
-    // MOVIMENTO
-    // =========================================================
-
     private void MovePlayer()
     {
         Vector3 direction =
@@ -249,8 +264,8 @@ public class TwoBallController : MonoBehaviour
             );
 
         if (
-            direction.sqrMagnitude
-            < 0.01f
+            direction.sqrMagnitude <
+            0.01f
         )
         {
             return;
@@ -259,7 +274,6 @@ public class TwoBallController : MonoBehaviour
         float speed =
             moveSpeed;
 
-        // Continua compatível com PlayerStats
         if (stats != null)
         {
             speed *=
@@ -272,10 +286,6 @@ public class TwoBallController : MonoBehaviour
             ForceMode.Acceleration
         );
     }
-
-    // =========================================================
-    // LIMITAR VELOCIDADE
-    // =========================================================
 
     private void LimitSpeed()
     {
@@ -304,7 +314,7 @@ public class TwoBallController : MonoBehaviour
     }
 
     // =========================================================
-    // INPUT - PULO
+    // PULO
     // =========================================================
 
     private void ReadJump()
@@ -322,10 +332,6 @@ public class TwoBallController : MonoBehaviour
         }
     }
 
-    // =========================================================
-    // PULO
-    // =========================================================
-
     private void Jump()
     {
         if (!isGrounded)
@@ -336,7 +342,8 @@ public class TwoBallController : MonoBehaviour
         Vector3 velocity =
             rb.linearVelocity;
 
-        velocity.y = 0f;
+        velocity.y =
+            0f;
 
         rb.linearVelocity =
             velocity;
@@ -347,18 +354,16 @@ public class TwoBallController : MonoBehaviour
             ForceMode.Impulse
         );
 
-        isGrounded = false;
+        isGrounded =
+            false;
     }
-
-    // =========================================================
-    // DETECTAR CHÃO
-    // =========================================================
 
     private void CheckGround()
     {
         if (playerCollider == null)
         {
-            isGrounded = false;
+            isGrounded =
+                false;
 
             return;
         }
@@ -378,14 +383,8 @@ public class TwoBallController : MonoBehaviour
     }
 
     // =========================================================
-    // EVENTOS DO INPUT SYSTEM
+    // EVENTOS INPUT SYSTEM
     // =========================================================
-
-    /*
-     * Esses métodos continuam existindo caso
-     * algum objeto antigo ainda esteja conectado
-     * via Invoke Unity Events.
-     */
 
     public void OnMove(
         InputAction.CallbackContext context
@@ -407,19 +406,15 @@ public class TwoBallController : MonoBehaviour
         Jump();
     }
 
-    // =========================================================
-    // PUSH ANTIGO
-    // =========================================================
-
     public void OnPush(
         InputAction.CallbackContext context
     )
     {
-        // Não utilizado nesta atividade.
+        // Não usado nesta atividade.
     }
 
     // =========================================================
-    // CONFIGURAÇÃO ANTIGA
+    // COMPATIBILIDADE
     // =========================================================
 
     public void Configure(
@@ -433,146 +428,344 @@ public class TwoBallController : MonoBehaviour
     }
 
     // =========================================================
-    // SAVE
+    // CRIAR SAVE DO INÍCIO
+    // =========================================================
+
+    private SaveData CreateStartSave()
+    {
+        Vector3 startPosition =
+            startPoint != null
+                ? startPoint.position
+                : initialSpawnPoint;
+
+        return new SaveData
+        {
+            sceneName =
+                SceneManager
+                    .GetActiveScene()
+                    .name,
+
+            playerPosition =
+                startPosition,
+
+            checkpointPosition =
+                Vector3.zero,
+
+            checkpointPassed =
+                false,
+
+            hasReachedCheckpoint =
+                false,
+
+            activeCheckpointId =
+                "",
+
+            coins =
+                0,
+
+            collectedCoinIds =
+                new List<string>()
+        };
+    }
+
+    // =========================================================
+    // ESTADO QUE PODE SER SALVO MANUALMENTE
+    // =========================================================
+
+    /*
+     * Se já passou no checkpoint,
+     * salva EXATAMENTE o estado do checkpoint.
+     *
+     * Se ainda não passou,
+     * salva o início da fase.
+     */
+
+    public SaveData BuildResumeSaveData()
+    {
+        if (SaveManager.Instance != null)
+        {
+            SaveData autosave =
+                SaveManager.Instance
+                    .LoadFromSlot(
+                        SaveManager.AutosaveSlot
+                    );
+
+            if (
+                autosave != null &&
+                autosave.sceneName ==
+                SceneManager
+                    .GetActiveScene()
+                    .name &&
+                autosave.checkpointPassed
+            )
+            {
+                return autosave.Clone();
+            }
+        }
+
+        return CreateStartSave();
+    }
+
+    // =========================================================
+    // AUTOSAVE
     // =========================================================
 
     public void SaveCurrentProgress()
     {
         if (SaveManager.Instance == null)
         {
-            Debug.LogWarning("SaveManager não encontrado.");
+            Debug.LogWarning(
+                "SaveManager não encontrado."
+            );
+
             return;
         }
 
-        SaveData existingSave = SaveManager.Instance.LoadFromSlot(0);
+        SaveData save =
+            BuildResumeSaveData();
 
-        HUDController hud = FindFirstObjectByType<HUDController>();
-        SaveData save = new SaveData
-        {
-            sceneName = SceneManager.GetActiveScene().name,
-            playerPosition = transform.position,
-            checkpointPosition = existingSave != null && existingSave.checkpointPassed ? existingSave.checkpointPosition : transform.position,
-            checkpointPassed = existingSave != null && existingSave.checkpointPassed,
-            activeCheckpointId = existingSave != null ? existingSave.activeCheckpointId : "",
-            coins = hud != null ? hud.Coins : 0,
-            collectedCoinIds = new List<string>(SaveManager.Instance.CurrentCollectedCoins)
-        };
+        SaveManager.Instance
+            .SaveToSlot(
+                SaveManager.AutosaveSlot,
+                save
+            );
 
-        SaveManager.Instance.SaveToSlot(0, save);
-
-        if (saveSlot != 0)
-        {
-            SaveManager.Instance.SaveToSlot(saveSlot, save);
-        }
-
-        Debug.Log("Progresso salvo no autosave e slot " + saveSlot);
+        Debug.Log(
+            "Autosave atualizado."
+        );
     }
 
-    public void SaveCheckpointProgress(string checkpointId, Vector3 checkpointPosition)
+    // =========================================================
+    // SAVE MANUAL
+    // =========================================================
+
+    public void SaveManualProgress(
+        int slot
+    )
     {
         if (SaveManager.Instance == null)
         {
             return;
         }
 
-        HUDController hud = FindFirstObjectByType<HUDController>();
-        SaveData save = new SaveData
+        if (
+            slot <
+            SaveManager.FirstManualSlot ||
+            slot >
+            SaveManager.LastManualSlot
+        )
         {
-            sceneName = SceneManager.GetActiveScene().name,
-            playerPosition = checkpointPosition,
-            checkpointPosition = checkpointPosition,
-            checkpointPassed = true,
-            activeCheckpointId = checkpointId,
-            coins = hud != null ? hud.Coins : 0,
-            collectedCoinIds = new List<string>(SaveManager.Instance.CurrentCollectedCoins)
-        };
+            Debug.LogWarning(
+                "Slot manual inválido: "
+                + slot
+            );
 
-        SaveManager.Instance.SaveToSlot(0, save);
+            return;
+        }
+
+        SaveData save =
+            BuildResumeSaveData();
+
+        SaveManager.Instance
+            .SaveToSlot(
+                slot,
+                save
+            );
+
+        Debug.Log(
+            "Save manual realizado no slot "
+            + slot
+        );
+    }
+
+    // =========================================================
+    // CHECKPOINT
+    // =========================================================
+
+    public void SaveCheckpointProgress(
+        string checkpointId,
+        Vector3 checkpointPosition
+    )
+    {
+        if (SaveManager.Instance == null)
+        {
+            return;
+        }
+
+        int currentCoins =
+            stats != null
+                ? stats.Coins
+                : 0;
+
+        SaveData save =
+            new SaveData
+            {
+                sceneName =
+                    SceneManager
+                        .GetActiveScene()
+                        .name,
+
+                playerPosition =
+                    checkpointPosition,
+
+                checkpointPosition =
+                    checkpointPosition,
+
+                checkpointPassed =
+                    true,
+
+                hasReachedCheckpoint =
+                    true,
+
+                activeCheckpointId =
+                    checkpointId,
+
+                coins =
+                    currentCoins,
+
+                collectedCoinIds =
+                    new List<string>(
+                        SaveManager.Instance
+                            .CurrentCollectedCoins
+                    )
+            };
+
+        SaveManager.Instance
+            .SaveToSlot(
+                SaveManager.AutosaveSlot,
+                save
+            );
+
+        Debug.Log(
+            "Checkpoint salvo. Moedas: "
+            + currentCoins
+        );
     }
 
     // =========================================================
     // LOAD
     // =========================================================
 
-    public void LoadProgress(int slot = -1)
+    public void LoadProgress(
+        int slot = 0
+    )
     {
-        if (SaveManager.Instance == null)
+        if (
+            SaveRestoreManager.Instance !=
+            null
+        )
         {
-            return;
-        }
-
-        int slotToUse = slot < 0 ? saveSlot : slot;
-        SaveData data = SaveManager.Instance.LoadFromSlot(slotToUse);
-
-        if (data == null)
-        {
-            return;
-        }
-
-        if (!string.IsNullOrEmpty(data.sceneName) && data.sceneName != SceneManager.GetActiveScene().name)
-        {
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.ForceSceneChange(data.sceneName);
-            }
+            SaveRestoreManager.Instance
+                .RequestLoadSlot(
+                    slot
+                );
 
             return;
         }
 
-        ApplyLoadedData(data);
+        Debug.LogWarning(
+            "SaveRestoreManager não encontrado."
+        );
     }
 
-    public void ApplyLoadedData(SaveData data)
+    // =========================================================
+    // APLICAR SAVE
+    // =========================================================
+
+    public void ApplyLoadedData(
+        SaveData data
+    )
     {
         if (data == null)
         {
             return;
         }
 
-        rb.linearVelocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
+        rb.linearVelocity =
+            Vector3.zero;
 
-        Vector3 spawnPosition = data.checkpointPassed ? data.checkpointPosition : data.playerPosition;
-        rb.position = spawnPosition;
-        transform.position = spawnPosition;
+        rb.angularVelocity =
+            Vector3.zero;
+
+        Vector3 spawnPosition;
+
+        if (data.checkpointPassed)
+        {
+            spawnPosition =
+                data.checkpointPosition;
+        }
+        else if (startPoint != null)
+        {
+            spawnPosition =
+                startPoint.position;
+        }
+        else
+        {
+            spawnPosition =
+                initialSpawnPoint;
+        }
+
+        rb.position =
+            spawnPosition;
+
+        transform.position =
+            spawnPosition;
+
+        Physics.SyncTransforms();
 
         if (SaveManager.Instance != null)
         {
-            SaveManager.Instance.SetCurrentCollectedCoins(data.collectedCoinIds);
+            SaveManager.Instance
+                .SetCurrentCollectedCoins(
+                    data.collectedCoinIds
+                );
         }
 
-        HUDController hud = FindFirstObjectByType<HUDController>();
+        if (stats != null)
+        {
+            stats.SetCoins(
+                data.coins
+            );
+        }
+
+        HUDController hud =
+            FindFirstObjectByType<HUDController>();
+
         if (hud != null)
         {
-            hud.SetCoins(data.coins);
+            hud.SetCoins(
+                data.coins
+            );
         }
 
-        PlayerStats playerStats = GetComponent<PlayerStats>();
-        if (playerStats != null)
-        {
-            playerStats.SetCoins(data.coins);
-        }
-
-        foreach (Coin coin in FindObjectsByType<Coin>(FindObjectsSortMode.None))
-        {
-            if (coin == null)
-            {
-                continue;
-            }
-
-            bool coinAlreadyCollected = SaveManager.Instance != null && SaveManager.Instance.IsCoinCollected(coin.CoinId);
-            coin.gameObject.SetActive(!coinAlreadyCollected);
-        }
+        RefreshCoins();
     }
+
+    // =========================================================
+    // RESPAWN
+    // =========================================================
 
     public Vector3 GetRespawnPosition()
     {
         if (SaveManager.Instance != null)
         {
-            SaveData data = SaveManager.Instance.LoadFromSlot(0);
-            if (data != null && data.checkpointPassed && data.sceneName == SceneManager.GetActiveScene().name)
+            SaveData autosave =
+                SaveManager.Instance
+                    .LoadFromSlot(
+                        SaveManager.AutosaveSlot
+                    );
+
+            if (
+                autosave != null &&
+                autosave.checkpointPassed &&
+                autosave.sceneName ==
+                SceneManager
+                    .GetActiveScene()
+                    .name
+            )
             {
-                return data.checkpointPosition;
+                return autosave
+                    .checkpointPosition;
             }
         }
 
@@ -584,31 +777,96 @@ public class TwoBallController : MonoBehaviour
         return initialSpawnPoint;
     }
 
+    // =========================================================
+    // MORTE
+    // =========================================================
+
     public void RespawnToCheckpointOrStart()
     {
-        Vector3 respawnPosition = GetRespawnPosition();
-
-        if (rb != null)
+        if (SaveManager.Instance != null)
         {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-            rb.position = respawnPosition;
+            SaveData autosave =
+                SaveManager.Instance
+                    .LoadFromSlot(
+                        SaveManager.AutosaveSlot
+                    );
+
+            if (
+                autosave != null &&
+                autosave.sceneName ==
+                SceneManager
+                    .GetActiveScene()
+                    .name &&
+                autosave.checkpointPassed
+            )
+            {
+                // Volta EXATAMENTE ao estado do checkpoint
+                ApplyLoadedData(
+                    autosave
+                );
+
+                return;
+            }
         }
 
-        transform.position = respawnPosition;
+        // Não passou no checkpoint:
+        // volta ao início com 0 moedas.
+        SaveData startSave =
+            CreateStartSave();
+
+        if (SaveManager.Instance != null)
+        {
+            SaveManager.Instance
+                .ClearCollectedCoins();
+        }
+
+        ApplyLoadedData(
+            startSave
+        );
     }
 
     // =========================================================
-    // SAIR DO JOGO
+    // REATIVAR / DESATIVAR MOEDAS
+    // =========================================================
+
+    private void RefreshCoins()
+    {
+        Coin[] coins =
+            FindObjectsByType<Coin>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
+
+        foreach (
+            Coin coin
+            in coins
+        )
+        {
+            if (coin != null)
+            {
+                coin.RefreshFromCurrentSaveState();
+            }
+        }
+    }
+
+    // =========================================================
+    // SAIR
     // =========================================================
 
     private void OnApplicationQuit()
     {
+        /*
+         * Mantém um autosave válido.
+         *
+         * Se houver checkpoint, mantém o checkpoint.
+         * Caso contrário, salva o início da fase.
+         */
+
         SaveCurrentProgress();
     }
 
     // =========================================================
-    // DEBUG DO CHÃO
+    // DEBUG
     // =========================================================
 
     private void OnDrawGizmosSelected()

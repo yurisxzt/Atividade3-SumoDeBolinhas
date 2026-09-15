@@ -9,109 +9,144 @@ public class Coin : MonoBehaviour
     [SerializeField]
     private string coinId = "";
 
-    public string CoinId => coinId;
+    public string CoinId =>
+        coinId;
+
+    // =========================================================
+    // AWAKE
+    // =========================================================
 
     private void Awake()
     {
-        if (string.IsNullOrWhiteSpace(coinId))
+        if (
+            string.IsNullOrWhiteSpace(
+                coinId
+            )
+        )
         {
-            coinId = $"{SceneManager.GetActiveScene().name}_{gameObject.name}_{Mathf.RoundToInt(transform.position.x * 100f)}_{Mathf.RoundToInt(transform.position.z * 100f)}";
+            coinId =
+                SceneManager
+                    .GetActiveScene()
+                    .name
+                + "_"
+                + gameObject.name
+                + "_"
+                + Mathf.RoundToInt(
+                    transform.position.x
+                    * 100f
+                )
+                + "_"
+                + Mathf.RoundToInt(
+                    transform.position.y
+                    * 100f
+                )
+                + "_"
+                + Mathf.RoundToInt(
+                    transform.position.z
+                    * 100f
+                );
         }
     }
 
+    // =========================================================
+    // START / ENABLE
+    // =========================================================
+
     private void Start()
     {
-        ApplySaveState();
+        RefreshFromCurrentSaveState();
     }
 
     private void OnEnable()
     {
-        ApplySaveState();
+        RefreshFromCurrentSaveState();
     }
 
-    private void ApplySaveState()
+    // =========================================================
+    // ATUALIZAR ESTADO
+    // =========================================================
+
+    public void RefreshFromCurrentSaveState()
     {
         if (SaveManager.Instance == null)
         {
-            gameObject.SetActive(true);
             return;
         }
 
-        SaveData current = SaveManager.Instance.LoadFromSlot(0);
-        bool alreadyCollected = false;
+        bool collected =
+            SaveManager.Instance
+                .IsCoinCollected(
+                    coinId
+                );
 
-        if (current != null && current.sceneName == SceneManager.GetActiveScene().name && current.collectedCoinIds != null)
+        if (
+            gameObject.activeSelf ==
+            collected
+        )
         {
-            alreadyCollected = ContainsCoinId(current.collectedCoinIds, coinId);
+            gameObject.SetActive(
+                !collected
+            );
         }
-
-        if (!alreadyCollected)
-        {
-            alreadyCollected = ContainsCoinId(SaveManager.Instance.CurrentCollectedCoins, coinId);
-        }
-
-        if (!alreadyCollected)
-        {
-            alreadyCollected = SaveManager.Instance.IsCoinCollected(coinId);
-        }
-
-        gameObject.SetActive(!alreadyCollected);
     }
 
-    private static bool ContainsCoinId(System.Collections.Generic.IEnumerable<string> ids, string targetId)
+    // =========================================================
+    // PEGAR MOEDA
+    // =========================================================
+
+    private void OnTriggerEnter(
+        Collider other
+    )
     {
-        if (string.IsNullOrWhiteSpace(targetId) || ids == null)
-        {
-            return false;
-        }
+        PlayerStats stats =
+            other.GetComponentInParent<PlayerStats>();
 
-        foreach (string id in ids)
-        {
-            if (string.Equals(id, targetId))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (!other.CompareTag("Player"))
-        {
-            return;
-        }
-
-        if (!gameObject.activeSelf)
-        {
-            return;
-        }
-
-        PlayerStats stats = other.GetComponentInParent<PlayerStats>();
         if (stats == null)
         {
             return;
         }
 
-        stats.AddCoins(value);
+        if (
+            !other.CompareTag("Player") &&
+            !stats.CompareTag("Player")
+        )
+        {
+            return;
+        }
+
+        stats.AddCoins(
+            value
+        );
 
         if (SaveManager.Instance != null)
         {
-            SaveManager.Instance.MarkCoinCollected(coinId);
+            SaveManager.Instance
+                .MarkCoinCollected(
+                    coinId
+                );
         }
 
-        var player = other.GetComponentInParent<TwoBallController>();
-        if (player != null)
-        {
-            player.SaveCurrentProgress();
-        }
+        /*
+         * NÃO fazemos SaveCurrentProgress aqui.
+         *
+         * O progresso é salvo no checkpoint,
+         * nos slots manuais e na vitória.
+         */
 
-        gameObject.SetActive(false);
+        gameObject.SetActive(
+            false
+        );
     }
+
+    // =========================================================
+    // ROTAÇÃO
+    // =========================================================
 
     private void Update()
     {
-        transform.Rotate(Vector3.up, 180f * Time.deltaTime);
+        transform.Rotate(
+            Vector3.up,
+            180f * Time.deltaTime
+        );
     }
 }

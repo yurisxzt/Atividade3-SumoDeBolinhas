@@ -1,52 +1,116 @@
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class Checkpoint : MonoBehaviour
 {
-    public Vector3 centerOffset = Vector3.zero;
-    public bool activated = false;
-    public string checkpointId = "checkpoint";
+    [Header("Checkpoint")]
+    public Vector3 centerOffset =
+        Vector3.zero;
 
-    private void OnTriggerEnter2D(Collider2D other)
+    public bool activated =
+        false;
+
+    public string checkpointId =
+        "checkpoint";
+
+    // =========================================================
+    // TRIGGER 2D
+    // =========================================================
+
+    private void OnTriggerEnter2D(
+        Collider2D other
+    )
     {
-        HandleTrigger(other.gameObject);
+        HandleTrigger(
+            other.gameObject
+        );
     }
 
-    private void OnTriggerEnter(Collider other)
+    // =========================================================
+    // TRIGGER 3D
+    // =========================================================
+
+    private void OnTriggerEnter(
+        Collider other
+    )
     {
-        HandleTrigger(other.gameObject);
+        HandleTrigger(
+            other.gameObject
+        );
     }
 
-    private void HandleTrigger(GameObject obj)
+    // =========================================================
+    // ATIVAR
+    // =========================================================
+
+    private void HandleTrigger(
+        GameObject obj
+    )
     {
-        if (activated || !obj.CompareTag("Player"))
+        if (
+            activated ||
+            obj == null
+        )
         {
             return;
         }
 
-        activated = true;
+        TwoBallController player =
+            obj.GetComponentInParent<TwoBallController>();
 
-        var save = new SaveData
+        if (player == null)
         {
-            sceneName = SceneManager.GetActiveScene().name,
-            coins = FindFirstObjectByType<HUDController>()?.Coins ?? 0,
-            playerPosition = transform.position + centerOffset,
-            checkpointPassed = true,
-            checkpointPosition = transform.position + centerOffset,
-            activeCheckpointId = string.IsNullOrEmpty(checkpointId) ? gameObject.name : checkpointId,
-            collectedCoinIds = new List<string>(SaveManager.Instance != null ? SaveManager.Instance.CurrentCollectedCoins : new List<string>())
-        };
-
-        if (SaveManager.Instance != null)
-        {
-            SaveManager.Instance.SaveToSlot(0, save);
+            return;
         }
 
-        var evt = Resources.Load<VoidEventChannel>("EventChannels/CheckpointReached");
+        if (
+            !player.CompareTag(
+                "Player"
+            )
+        )
+        {
+            return;
+        }
+
+        activated =
+            true;
+
+        Vector3 centerPosition =
+            transform.position
+            + centerOffset;
+
+        string id =
+            string.IsNullOrEmpty(
+                checkpointId
+            )
+                ? gameObject.name
+                : checkpointId;
+
+        // =====================================================
+        // AUTOSAVE DO CHECKPOINT
+        // =====================================================
+
+        player.SaveCheckpointProgress(
+            id,
+            centerPosition
+        );
+
+        // =====================================================
+        // STATIC EVENT CHANNEL
+        // =====================================================
+
+        VoidEventChannel evt =
+            Resources.Load<VoidEventChannel>(
+                "EventChannels/CheckpointReached"
+            );
+
         if (evt != null)
         {
             evt.Raise();
         }
+
+        Debug.Log(
+            "Checkpoint ativado: "
+            + id
+        );
     }
 }
