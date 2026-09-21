@@ -1,57 +1,222 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class SaveSlotUI : MonoBehaviour {
-    public int slotIndex;
-    public PauseMenuController controller; // opcional, para fechar UI
-    public Button button;
-    public Text label;
-    [Tooltip("If true this button loads the slot instead of saving it")]
+public class SaveSlotUI : MonoBehaviour
+{
+    [Header("Slot")]
+    public int slotIndex = 1;
+
+    [Header("Modo")]
     public bool isLoadMode = false;
 
-    void Start() {
-        if (button == null) button = GetComponent<Button>();
+    [Header("Referências")]
+    public PauseMenuController controller;
+
+    public Button button;
+
+    public Text label;
+
+    private bool configured = false;
+
+    // =========================================================
+    // START
+    // =========================================================
+
+    private void Start()
+    {
+        Setup();
+    }
+
+    // =========================================================
+    // CONFIGURAR
+    // =========================================================
+
+    public void Setup()
+    {
+        if (button == null)
+        {
+            button =
+                GetComponent<Button>();
+        }
+
+        if (label == null)
+        {
+            label =
+                GetComponentInChildren<Text>(
+                    true
+                );
+        }
+
         UpdateLabel();
-        if (button != null) button.onClick.AddListener(OnPressed);
-    }
 
-    public void UpdateLabel() {
-        if (label == null) return;
-        if (SaveManager.Instance == null) { label.text = $"Slot {slotIndex}"; return; }
-        if (SaveManager.Instance.SlotExists(slotIndex))
+        if (
+            button != null &&
+            !configured
+        )
         {
-            var data = SaveManager.Instance.LoadFromSlot(slotIndex);
-            label.text = data != null ? $"Slot {slotIndex} - {data.sceneName}" : $"Slot {slotIndex} (Saved)";
-        }
-        else
-        {
-            label.text = $"Slot {slotIndex} (Empty)";
+            button.onClick.AddListener(
+                OnPressed
+            );
+
+            configured = true;
         }
     }
 
-    public void OnPressed() {
-        if (isLoadMode)
+    // =========================================================
+    // TEXTO
+    // =========================================================
+
+    public void UpdateLabel()
+    {
+        if (label == null)
         {
-            if (SaveManager.Instance == null) return;
-            if (!SaveManager.Instance.SlotExists(slotIndex)) return;
-            SaveRestoreManager.Instance.RequestLoadSlot(slotIndex);
             return;
         }
 
-        // salvar jogador
-        var player = FindObjectOfType<TwoBallController>();
-        var save = new SaveData();
-        save.sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-        save.playerPosition = player != null ? player.transform.position : Vector3.zero;
-        var hud = FindObjectOfType<HUDController>();
-        save.coins = hud != null ? hud.Coins : 0;
-
-        if (SaveManager.Instance != null)
+        if (SaveManager.Instance == null)
         {
-            SaveManager.Instance.SaveToSlot(slotIndex, save);
-            UpdateLabel();
+            label.text =
+                "Slot " + slotIndex;
+
+            return;
         }
 
-        controller?.TogglePause();
+        if (
+            SaveManager.Instance
+                .SlotExists(
+                    slotIndex
+                )
+        )
+        {
+            SaveData data =
+                SaveManager.Instance
+                    .LoadFromSlot(
+                        slotIndex
+                    );
+
+            if (data != null)
+            {
+                label.text =
+                    "Slot "
+                    + slotIndex
+                    + " - "
+                    + data.sceneName
+                    + " - "
+                    + data.coins
+                    + " moedas";
+            }
+            else
+            {
+                label.text =
+                    "Slot "
+                    + slotIndex
+                    + " - Salvo";
+            }
+        }
+        else
+        {
+            label.text =
+                "Slot "
+                + slotIndex
+                + " - Vazio";
+        }
+    }
+
+    // =========================================================
+    // PRESSIONAR
+    // =========================================================
+
+    public void OnPressed()
+    {
+        if (SaveManager.Instance == null)
+        {
+            Debug.LogWarning(
+                "SaveSlotUI: SaveManager não encontrado."
+            );
+
+            return;
+        }
+
+        if (isLoadMode)
+        {
+            LoadSlot();
+        }
+        else
+        {
+            SaveSlot();
+        }
+    }
+
+    // =========================================================
+    // SALVAR
+    // =========================================================
+
+    private void SaveSlot()
+    {
+        TwoBallController player =
+            FindFirstObjectByType<TwoBallController>();
+
+        if (player == null)
+        {
+            Debug.LogWarning(
+                "SaveSlotUI: jogador não encontrado."
+            );
+
+            return;
+        }
+
+        player.SaveManualProgress(
+            slotIndex
+        );
+
+        UpdateLabel();
+
+        if (controller != null)
+        {
+            controller.CloseSaveSlots();
+        }
+    }
+
+    // =========================================================
+    // CARREGAR
+    // =========================================================
+
+    private void LoadSlot()
+    {
+        if (
+            !SaveManager.Instance
+                .SlotExists(
+                    slotIndex
+                )
+        )
+        {
+            Debug.Log(
+                "Slot "
+                + slotIndex
+                + " está vazio."
+            );
+
+            return;
+        }
+
+        if (
+            SaveRestoreManager.Instance ==
+            null
+        )
+        {
+            Debug.LogWarning(
+                "SaveRestoreManager não encontrado."
+            );
+
+            return;
+        }
+
+        Time.timeScale =
+            1f;
+
+        SaveRestoreManager.Instance
+            .RequestLoadSlot(
+                slotIndex
+            );
     }
 }
