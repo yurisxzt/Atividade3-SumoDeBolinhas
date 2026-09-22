@@ -12,6 +12,12 @@ public class PauseMenuController : MonoBehaviour
     [Header("Prefab opcional")]
     [SerializeField] private GameObject saveSlotButtonPrefab;
 
+    [Header("Configurações de slots")]
+    [SerializeField] private int slotCount = 3;
+    [SerializeField] private float slotSpacing = 100f;
+    [SerializeField] private Vector2 panelSize = new Vector2(420f, 500f);
+    [SerializeField] private Vector2 buttonSize = new Vector2(320f, 55f);
+
     private bool isSavingMode = false;
 
     // =========================================================
@@ -145,11 +151,14 @@ public class PauseMenuController : MonoBehaviour
             saveSlotsRoot = CreateSaveSlotsPanel();
         }
 
+        // Activate the panel first so layout systems run correctly while adding children.
+        saveSlotsRoot.SetActive(true);
+
         ClearOldSlotButtons();
 
         // IMPORTANTE:
-        // Slots manuais são 1, 2 e 3.
-        for (int slot = 1; slot <= 3; slot++)
+        // Slots manuais são 1..slotCount (configurável).
+        for (int slot = 1; slot <= slotCount; slot++)
         {
             CreateSlotButton(
                 slot,
@@ -161,7 +170,16 @@ public class PauseMenuController : MonoBehaviour
             saveSlotsRoot.transform
         );
 
-        saveSlotsRoot.SetActive(true);
+        // Force layout rebuild so the VerticalLayoutGroup arranges the new buttons immediately.
+        RectTransform rt = saveSlotsRoot.GetComponent<RectTransform>();
+        if (rt != null)
+        {
+            // Ensure canvas/layout are updated so spacing and ContentSizeFitter take effect.
+            Canvas.ForceUpdateCanvases();
+            UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
+            Canvas.ForceUpdateCanvases();
+            UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
+        }
 
         Time.timeScale = 0f;
     }
@@ -240,7 +258,8 @@ public class PauseMenuController : MonoBehaviour
                 "SaveSlotsRoot",
                 typeof(RectTransform),
                 typeof(Image),
-                typeof(VerticalLayoutGroup)
+                typeof(VerticalLayoutGroup),
+                typeof(UnityEngine.UI.ContentSizeFitter)
             );
 
         panel.transform.SetParent(
@@ -263,8 +282,7 @@ public class PauseMenuController : MonoBehaviour
         rect.anchoredPosition =
             Vector2.zero;
 
-        rect.sizeDelta =
-            new Vector2(420f, 320f);
+        rect.sizeDelta = panelSize;
 
         Image background =
             panel.GetComponent<Image>();
@@ -280,25 +298,33 @@ public class PauseMenuController : MonoBehaviour
         VerticalLayoutGroup layout =
             panel.GetComponent<VerticalLayoutGroup>();
 
-        layout.childAlignment =
-            TextAnchor.MiddleCenter;
+        // Do not let the layout override child's preferred sizes — use LayoutElement values.
+        layout.childControlWidth = false;
+        layout.childControlHeight = false;
 
-        layout.spacing =
-            15f;
+        // Position children top-down.
+        layout.childAlignment = TextAnchor.UpperCenter;
 
-        layout.padding =
-            new RectOffset(
-                30,
-                30,
-                30,
-                30
-            );
+        layout.spacing = slotSpacing;
 
-        layout.childForceExpandWidth =
-            false;
+        layout.padding = new RectOffset(
+            30,
+            30,
+            30,
+            30
+        );
 
-        layout.childForceExpandHeight =
-            false;
+        layout.childForceExpandWidth = false;
+
+        layout.childForceExpandHeight = false;
+
+        // Configure ContentSizeFitter so the panel fits its children vertically.
+        UnityEngine.UI.ContentSizeFitter csf = panel.GetComponent<UnityEngine.UI.ContentSizeFitter>();
+        if (csf != null)
+        {
+            csf.horizontalFit = UnityEngine.UI.ContentSizeFitter.FitMode.Unconstrained;
+            csf.verticalFit = UnityEngine.UI.ContentSizeFitter.FitMode.PreferredSize;
+        }
 
         return panel;
     }
@@ -422,20 +448,14 @@ public class PauseMenuController : MonoBehaviour
         RectTransform rect =
             buttonObject.GetComponent<RectTransform>();
 
-        rect.sizeDelta =
-            new Vector2(
-                320f,
-                55f
-            );
+        rect.sizeDelta = buttonSize;
 
         LayoutElement layout =
             buttonObject.GetComponent<LayoutElement>();
 
-        layout.preferredWidth =
-            320f;
+        layout.preferredWidth = buttonSize.x;
 
-        layout.preferredHeight =
-            55f;
+        layout.preferredHeight = buttonSize.y;
 
         Image image =
             buttonObject.GetComponent<Image>();
